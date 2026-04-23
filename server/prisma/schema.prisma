@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = env("DATABASE_PROVIDER")
   url      = env("DATABASE_URL")
 }
 
@@ -40,7 +40,7 @@ model Document {
   fileSize      Int
   status        DocumentStatus @default(PROCESSING)
   pageCount     Int?
-  extractedText String?        @db.LongText
+  extractedText String?
   vectorStoreId String?
   encryptionIv  String?
   createdAt     DateTime       @default(now())
@@ -80,7 +80,7 @@ model AuditLog {
   resourceType String?
   resourceId   String?
   ipAddress    String?
-  userAgent    String?  @db.Text
+  userAgent    String?
   success      Boolean  @default(true)
   metadata     Json?
   createdAt    DateTime @default(now())
@@ -112,7 +112,7 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           MessageRole
-  content        String       @db.Text
+  content        String
   sources        Json?
   createdAt      DateTime     @default(now())
 
@@ -127,7 +127,7 @@ model DocumentFinding {
   document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentType String
   bodyPart     String?
-  finding      String   @db.Text
+  finding      String
   severity     String   @default("Normal")
   isAbnormal   Boolean  @default(false)
   reportDate   DateTime
