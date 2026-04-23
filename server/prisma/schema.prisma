@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  clerkId          String            @unique
+  email            String            @unique
+  fullName         String?
+  consentGiven     Boolean           @default(false)
+  consentAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  documents        Document[]
+  conversations    Conversation[]
+  healthMetrics    HealthMetric[]
+  auditLogs        AuditLog[]
+  documentFindings DocumentFinding[]
+  healthGoals      HealthGoal[]
+}
+
+enum DocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Document {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName      String
+  fileType      String
+  filePath      String
+  fileSize      Int
+  status        DocumentStatus @default(PROCESSING)
+  pageCount     Int?
+  extractedText String?        @db.LongText
+  vectorStoreId String?
+  encryptionIv  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  healthMetrics    HealthMetric[]
+  documentFindings DocumentFinding[]
+
+  @@index([userId])
+}
+
+model HealthMetric {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  metricName   String
+  value        Float
+  unit         String?
+  refRangeLow  Float?
+  refRangeHigh Float?
+  isAbnormal   Boolean  @default(false)
+  isCritical   Boolean  @default(false)
+  reportDate   DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId, metricName])
+  @@index([userId])
+  @@index([documentId])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  resourceType String?
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  success      Boolean  @default(true)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String    @default("New Conversation")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([userId])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String       @db.Text
+  sources        Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model DocumentFinding {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentType String
+  bodyPart     String?
+  finding      String   @db.Text
+  severity     String   @default("Normal")
+  isAbnormal   Boolean  @default(false)
+  reportDate   DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([documentId])
+}
+
+model HealthGoal {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metricName  String
+  targetValue Float
+  direction   String
+  unit        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}

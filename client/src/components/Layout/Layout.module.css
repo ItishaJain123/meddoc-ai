@@ -1,0 +1,125 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── Logo ───────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoText {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.logoWord {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.logoAi {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--surface);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+}
+
+/* ── Nav ────────────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.navLink {
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.navLink.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* ── User area ──────────────────────────────────────────────── */
+.userArea {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ── Theme toggle ───────────────────────────────────────────── */
+.themeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.themeToggle:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-muted);
+}
+
+/* ── Main ───────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}

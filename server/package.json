@@ -1,0 +1,39 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "postinstall": "prisma generate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@clerk/express": "^1.7.76",
+    "@langchain/community": "^0.3.59",
+    "@langchain/core": "^1.1.29",
+    "@langchain/google-genai": "^2.1.22",
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.15.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "langchain": "^1.2.28",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.0",
+    "pdf-parse": "^1.1.4",
+    "prisma": "^5.22.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

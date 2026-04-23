@@ -1,0 +1,106 @@
+.container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  min-width: 300px;
+  max-width: 400px;
+  box-shadow: var(--shadow-xl);
+  pointer-events: all;
+  animation: slideIn 0.3s ease;
+  font-family: var(--font);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.success {
+  background: var(--surface);
+  border: 1px solid #6ee7b7;
+  border-left: 4px solid var(--success);
+  color: var(--text-primary);
+}
+
+.error {
+  background: var(--surface);
+  border: 1px solid #fca5a5;
+  border-left: 4px solid var(--danger);
+  color: var(--text-primary);
+}
+
+.info {
+  background: var(--surface);
+  border: 1px solid var(--primary-muted);
+  border-left: 4px solid var(--primary);
+  color: var(--text-primary);
+}
+
+.iconWrap {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.success .iconWrap { background: var(--success-light); }
+.error   .iconWrap { background: var(--danger-light);  }
+.info    .iconWrap { background: var(--primary-light); }
+
+.iconWrap svg {
+  width: 16px;
+  height: 16px;
+}
+
+.success .iconWrap svg { color: var(--success); }
+.error   .iconWrap svg { color: var(--danger);  }
+.info    .iconWrap svg { color: var(--primary); }
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+
+.message {
+  font-size: 0.81rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  opacity: 0.45;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: opacity 0.15s;
+}
+.close:hover { opacity: 1; }

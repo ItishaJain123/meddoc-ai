@@ -1,0 +1,190 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.header {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.3px;
+}
+
+.header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ── Critical banner ─────────────────────────────────────── */
+.criticalBanner {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: var(--danger-light);
+  border: 1.5px solid #fca5a5;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  color: #7f1d1d;
+}
+
+.bannerIcon { font-size: 1.25rem; flex-shrink: 0; margin-top: 2px; }
+.alertList  { margin: 4px 0 8px; padding-left: 1.2rem; font-size: 0.87rem; line-height: 1.8; }
+.alertList li { margin-bottom: 2px; }
+.bannerNote { font-size: 0.82rem; font-style: italic; margin: 0; color: #b91c1c; }
+
+/* ── Controls ────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search {
+  flex: 1;
+  max-width: 320px;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: var(--font);
+  color: var(--text-primary);
+  background: var(--surface);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.search::placeholder { color: var(--text-muted); }
+
+.count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Metric cards grid ───────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: box-shadow 0.15s;
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card.abnormal { border-color: #fcd34d; }
+.card.critical { border-color: #f87171; background: #fff8f8; }
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.metricName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  flex-wrap: wrap;
+}
+
+.criticalBadge {
+  font-size: 0.63rem;
+  font-weight: 700;
+  background: var(--danger);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.5px;
+}
+
+.abnormalBadge {
+  font-size: 0.63rem;
+  font-weight: 700;
+  background: var(--warning);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+}
+
+.latestValue {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.valueNum  { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
+.valueUnit { font-size: 0.75rem; color: var(--text-secondary); }
+
+.trend        { font-size: 0.78rem; font-weight: 700; }
+.trend.up     { color: var(--success); }
+.trend.down   { color: var(--danger); }
+.trend.stable { color: var(--text-muted); }
+
+.refRange {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.singlePoint {
+  padding: 1rem 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Empty / loading ─────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.emptyIconWrap {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.emptyIconWrap svg {
+  width: 34px;
+  height: 34px;
+  color: var(--primary);
+}
+
+.empty h2  { font-weight: 700; color: var(--text-secondary); font-size: 1.15rem; margin-bottom: 0.5rem; }
+.empty p   { font-size: 0.9rem; color: var(--text-muted); }
+
+.center { text-align: center; padding: 4rem; color: var(--text-muted); }
+.error  {
+  background: var(--danger-light);
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+}

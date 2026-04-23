@@ -1,0 +1,130 @@
+/* ── Design tokens ──────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --primary:          #2563EB;
+  --primary-dark:     #1D4ED8;
+  --primary-darker:   #1E3A8A;
+  --primary-light:    #EFF6FF;
+  --primary-muted:    #BFDBFE;
+
+  /* Accent (cyan) */
+  --accent:           #06B6D4;
+  --accent-light:     #ECFEFF;
+
+  /* Semantic */
+  --success:          #059669;
+  --success-light:    #ECFDF5;
+  --warning:          #D97706;
+  --warning-light:    #FFFBEB;
+  --danger:           #DC2626;
+  --danger-light:     #FEF2F2;
+  --orange:           #EA580C;
+  --orange-light:     #FFF7ED;
+  --purple:           #7C3AED;
+  --purple-light:     #FAF5FF;
+  --teal:             #0D9488;
+  --teal-light:       #F0FDFA;
+
+  /* Text */
+  --text-primary:     #0F172A;
+  --text-secondary:   #475569;
+  --text-muted:       #94A3B8;
+
+  /* Surface */
+  --bg:               #F4F7FF;
+  --surface:          #FFFFFF;
+  --border:           #E2E8F0;
+  --border-light:     #F1F5F9;
+
+  /* Elevation */
+  --shadow-xs:  0 1px 2px rgba(15,23,42,0.05);
+  --shadow-sm:  0 1px 4px rgba(15,23,42,0.07);
+  --shadow-md:  0 4px 16px rgba(15,23,42,0.08);
+  --shadow-lg:  0 8px 32px rgba(15,23,42,0.10);
+  --shadow-xl:  0 16px 48px rgba(15,23,42,0.14);
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  /* Font */
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Dark mode tokens ───────────────────────────────────────── */
+[data-theme="dark"] {
+  --primary:        #3B82F6;
+  --primary-dark:   #2563EB;
+  --primary-darker: #1D4ED8;
+  --primary-light:  #1E3A5F;
+  --primary-muted:  #1E3A5F;
+
+  --accent:         #22D3EE;
+  --accent-light:   #0C4A6E;
+
+  --success:        #34D399;
+  --success-light:  #064E3B;
+  --warning:        #FBBF24;
+  --warning-light:  #451A03;
+  --danger:         #F87171;
+  --danger-light:   #450A0A;
+  --orange:         #FB923C;
+  --orange-light:   #431407;
+  --purple:         #A78BFA;
+  --purple-light:   #2E1065;
+  --teal:           #2DD4BF;
+  --teal-light:     #042F2E;
+
+  --text-primary:   #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted:     #64748B;
+
+  --bg:             #0F172A;
+  --surface:        #1E293B;
+  --border:         #334155;
+  --border-light:   #1E293B;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font);
+}
+
+input, textarea, select {
+  font-family: var(--font);
+}
