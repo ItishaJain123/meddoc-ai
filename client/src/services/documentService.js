@@ -49,6 +49,19 @@ export async function pollDocumentStatus(id, getToken) {
   return res.json();
 }
 
+export async function retryDocument(id, getToken) {
+  const headers = await getAuthHeaders(getToken);
+  const res = await fetch(`${API_URL}/documents/${id}/retry`, {
+    method: 'POST',
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Retry failed');
+  }
+  return res.json();
+}
+
 export async function reextractDocument(id, getToken) {
   const headers = await getAuthHeaders(getToken);
   const res = await fetch(`${API_URL}/documents/${id}/reextract`, {

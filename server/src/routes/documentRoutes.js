@@ -8,6 +8,7 @@ const {
   getDocumentStatus,
   removeDocument,
   reextractDocument,
+  retryDocument,
 } = require("../controllers/documentController");
 
 router.use(requireAuth);
@@ -17,5 +18,6 @@ router.get("/", listDocuments);
 router.get("/:id/status", getDocumentStatus);
 router.delete("/:id", removeDocument);
 router.post("/:id/reextract", reextractDocument);
+router.post("/:id/retry", retryDocument);
 
 module.exports = router;

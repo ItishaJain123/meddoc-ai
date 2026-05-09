@@ -259,6 +259,28 @@
 .emptyIcon { font-size: 2rem; }
 .emptyMsg  { font-size: 0.82rem; color: var(--text-muted); text-align: center; }
 
+/* ── Error state ─────────────────────────────────────────────── */
+.errorState {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.6rem; padding: 3rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.errorDetail {
+  font-size: 0.8rem; font-family: monospace;
+  background: #fef2f2; color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  max-width: 480px; text-align: center;
+}
+.errorHint {
+  font-size: 0.78rem; color: var(--text-muted);
+  text-align: center;
+}
+
 /* ── Skeleton loader ─────────────────────────────────────────── */
 .loadingGrid {
   display: grid;
@@ -285,10 +307,27 @@
 @media (max-width: 960px) {
   .row3 { grid-template-columns: 1fr 1fr; }
 }
+
+@media (max-width: 768px) {
+  .page { padding: 1.25rem 1rem 3rem; }
+  .headerActions { flex-wrap: wrap; gap: 0.5rem; }
+  .btnPrimary, .btnSecondary { font-size: 0.82rem; padding: 0.5rem 0.9rem; }
+}
+
 @media (max-width: 640px) {
+  .page        { padding: 1rem 0.75rem 2.5rem; gap: 1rem; }
   .row3        { grid-template-columns: 1fr; }
   .row2        { grid-template-columns: 1fr; }
   .statsRow    { grid-template-columns: 1fr 1fr; }
   .loadingGrid { grid-template-columns: 1fr; }
-  .name        { font-size: 1.3rem; }
+  .name        { font-size: 1.25rem; }
+  .greeting    { font-size: 0.8rem; }
+  .headerActions { width: 100%; }
+  .btnPrimary, .btnSecondary { flex: 1; text-align: center; }
+  .alertBanner { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .alertArrow  { align-self: flex-end; }
+  .findingsGrid { grid-template-columns: 1fr; }
+  .chartCard   { padding: 1rem; }
+  .metricSelect { max-width: 140px; font-size: 0.78rem; }
+  .trendHeader { flex-direction: column; }
 }

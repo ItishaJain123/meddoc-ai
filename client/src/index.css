@@ -128,3 +128,23 @@ button {
 input, textarea, select {
   font-family: var(--font);
 }
+
+/* ── Mobile base ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+
+  /* Prevent iOS zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Minimum touch target size */
+button, a, [role="button"] {
+  min-height: 36px;
+}
+
+/* Prevent horizontal overflow */
+img, video, svg {
+  max-width: 100%;
+}

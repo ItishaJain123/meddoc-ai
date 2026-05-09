@@ -1,0 +1,149 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.5rem 2rem 2rem;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.skip {
+  position: absolute;
+  top: 1rem;
+  right: 1.1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s;
+}
+
+.skip:hover { color: var(--text-secondary); }
+
+.iconWrap {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+}
+
+.iconWrap svg {
+  width: 80px;
+  height: 80px;
+}
+
+.dots {
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, width 0.2s;
+}
+
+.dotActive {
+  background: var(--primary);
+  width: 22px;
+  border-radius: 4px;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.backBtn {
+  flex: 0 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.backBtn:hover { background: var(--border); }
+
+.actionBtn {
+  flex: 1;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.actionBtn:hover { background: var(--primary-dark); }
+
+.stepCount {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 2rem 1.25rem 1.5rem;
+    border-radius: 16px;
+  }
+  .title { font-size: 1.05rem; }
+  .description { font-size: 0.85rem; }
+}

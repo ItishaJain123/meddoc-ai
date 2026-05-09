@@ -5,7 +5,7 @@ import Toast from '../components/Toast/Toast';
 import styles from './DocumentsPage.module.css';
 
 function DocumentsPage() {
-  const { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, toasts, removeToast } = useDocuments();
+  const { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, retry, retryingIds, toasts, removeToast } = useDocuments();
 
   return (
     <div className={styles.container}>
@@ -27,7 +27,7 @@ function DocumentsPage() {
         {loading ? (
           <div className={styles.loading}>Loading documents...</div>
         ) : (
-          <DocumentList documents={documents} onDelete={remove} onReextract={reextract} reextractingIds={reextractingIds} />
+          <DocumentList documents={documents} onDelete={remove} onReextract={reextract} reextractingIds={reextractingIds} onRetry={retry} retryingIds={retryingIds} />
         )}
       </div>
 

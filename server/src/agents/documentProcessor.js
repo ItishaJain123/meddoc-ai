@@ -3,6 +3,7 @@ const path = require("path");
 const pdfParse = require("pdf-parse");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
+const { retryWithBackoff } = require("../utils/retryWithBackoff");
 
 const textSplitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
@@ -20,10 +21,9 @@ async function verifyMedicalDocument(
   isImage = false,
   mimeType = null,
 ) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.MEDDOC_GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({
-    model:
-      process.env.GEMINI_VERIFICATION_MODEL || 'gemini-2.0-flash-lite',
+    model: process.env.MEDDOC_GEMINI_MODEL,
   });
 
   const verifyPrompt = `You are a strict medical document classifier. Determine whether the provided content is a legitimate medical document or medical image.
@@ -51,14 +51,18 @@ Respond with ONLY valid JSON (no markdown, no code blocks):
 
   let result;
   if (isImage) {
-    result = await model.generateContent([
-      { inlineData: { data: content, mimeType } },
-      verifyPrompt,
-    ]);
+    result = await retryWithBackoff(() =>
+      model.generateContent([
+        { inlineData: { data: content, mimeType } },
+        verifyPrompt,
+      ]),
+    );
   } else {
     const preview = content.slice(0, 3000);
-    result = await model.generateContent(
-      `${verifyPrompt}\n\nDocument text to classify:\n---\n${preview}\n---`,
+    result = await retryWithBackoff(() =>
+      model.generateContent(
+        `${verifyPrompt}\n\nDocument text to classify:\n---\n${preview}\n---`,
+      ),
     );
   }
 
@@ -87,12 +91,12 @@ async function extractTextFromPDF(filePathOrBuffer) {
  * Returns { isMedical, documentType, reason, text }
  */
 async function verifyAndExtractImage(buffer, mimeType) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.MEDDOC_GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_VISION_MODEL || 'gemini-2.0-flash',
+    model: process.env.MEDDOC_GEMINI_MODEL,
   });
 
-  const base64Image = buffer.toString('base64');
+  const base64Image = buffer.toString("base64");
 
   const prompt = `You are analyzing an image uploaded to a medical document app.
 
@@ -116,21 +120,23 @@ Respond with ONLY valid JSON in this exact format:
 }
 If not medical: { "isMedical": false, "documentType": null, "reason": "...", "extractedText": "" }`;
 
-  const result = await model.generateContent([
-    { inlineData: { data: base64Image, mimeType } },
-    prompt,
-  ]);
+  const result = await retryWithBackoff(() =>
+    model.generateContent([
+      { inlineData: { data: base64Image, mimeType } },
+      prompt,
+    ]),
+  );
 
   const raw = result.response.text().trim();
   const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Vision model returned invalid response');
+  if (!match) throw new Error("Vision model returned invalid response");
 
   const parsed = JSON.parse(match[0]);
   return {
     isMedical: Boolean(parsed.isMedical),
     documentType: parsed.documentType || null,
-    reason: parsed.reason || '',
-    text: parsed.extractedText || '',
+    reason: parsed.reason || "",
+    text: parsed.extractedText || "",
   };
 }
 
@@ -139,12 +145,12 @@ If not medical: { "isMedical": false, "documentType": null, "reason": "...", "ex
  */
 async function extractTextFromImage(filePathOrObj) {
   let buffer, mimeType;
-  if (typeof filePathOrObj === 'object' && filePathOrObj.buffer) {
+  if (typeof filePathOrObj === "object" && filePathOrObj.buffer) {
     buffer = filePathOrObj.buffer;
     mimeType = filePathOrObj.mimeType;
   } else {
     buffer = fs.readFileSync(filePathOrObj);
-    mimeType = filePathOrObj.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    mimeType = filePathOrObj.endsWith(".png") ? "image/png" : "image/jpeg";
   }
   const result = await verifyAndExtractImage(buffer, mimeType);
   return { text: result.text, pageCount: 1 };

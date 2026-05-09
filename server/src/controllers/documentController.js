@@ -67,6 +67,9 @@ async function listDocuments(req, res) {
     rejectionReason: extractedText?.startsWith('NOT_MEDICAL:')
       ? extractedText.replace('NOT_MEDICAL:', '').trim()
       : null,
+    processingError: extractedText?.startsWith('ERROR:')
+      ? extractedText.replace('ERROR:', '').trim()
+      : null,
   })));
 }
 
@@ -84,6 +87,9 @@ async function getDocumentStatus(req, res) {
     ...rest,
     rejectionReason: extractedText?.startsWith('NOT_MEDICAL:')
       ? extractedText.replace('NOT_MEDICAL:', '').trim()
+      : null,
+    processingError: extractedText?.startsWith('ERROR:')
+      ? extractedText.replace('ERROR:', '').trim()
       : null,
   });
 }
@@ -124,4 +130,31 @@ async function reextractDocument(req, res) {
   res.json({ message: `Re-extracted ${findings.length} findings`, findings });
 }
 
-module.exports = { uploadDocument, listDocuments, getDocumentStatus, removeDocument, reextractDocument };
+// POST /api/documents/:id/retry
+async function retryDocument(req, res) {
+  const doc = await prisma.document.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+  });
+
+  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  if (doc.status !== 'FAILED') return res.status(400).json({ error: 'Only failed documents can be retried' });
+
+  if (doc.extractedText?.startsWith('NOT_MEDICAL:')) {
+    return res.status(400).json({ error: 'This file was rejected as non-medical. Please upload a valid medical document.' });
+  }
+
+  if (!fs.existsSync(doc.filePath)) {
+    return res.status(400).json({ error: 'Original file is no longer available. Please re-upload the document.' });
+  }
+
+  await prisma.document.update({
+    where: { id: doc.id },
+    data: { status: 'PROCESSING', extractedText: null, encryptionIv: null },
+  });
+
+  processDocument(doc.id, req.user.id).catch(console.error);
+
+  res.json({ message: 'Document queued for reprocessing' });
+}
+
+module.exports = { uploadDocument, listDocuments, getDocumentStatus, removeDocument, reextractDocument, retryDocument };

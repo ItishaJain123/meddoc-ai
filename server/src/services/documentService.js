@@ -135,8 +135,8 @@ async function processDocument(documentId, userId) {
     console.error(`Failed to process document ${documentId}:`, err);
     await prisma.document.update({
       where: { id: documentId },
-      data: { status: 'FAILED' },
-    });
+      data: { status: 'FAILED', extractedText: `ERROR: ${err.message}` },
+    }).catch(() => {});
   }
 }
 

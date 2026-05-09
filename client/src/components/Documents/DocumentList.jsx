@@ -10,6 +10,9 @@ function getStatusConfig(doc) {
   if (doc.status === 'FAILED' && doc.rejectionReason) {
     return { label: 'Not Medical', className: 'failed', tooltip: doc.rejectionReason };
   }
+  if (doc.status === 'FAILED' && doc.processingError) {
+    return { label: 'Failed', className: 'failed', tooltip: `Error: ${doc.processingError}` };
+  }
   return { ...(STATUS_CONFIG[doc.status] || STATUS_CONFIG.PROCESSING), tooltip: null };
 }
 
@@ -43,7 +46,7 @@ function FileIcon({ type }) {
   );
 }
 
-function DocumentList({ documents, onDelete, onReextract, reextractingIds = new Set() }) {
+function DocumentList({ documents, onDelete, onReextract, reextractingIds = new Set(), onRetry, retryingIds = new Set() }) {
   if (documents.length === 0) {
     return (
       <div className={styles.empty}>
@@ -85,6 +88,16 @@ function DocumentList({ documents, onDelete, onReextract, reextractingIds = new 
                 title="Re-extract findings (use if Medications page is empty)"
               >
                 {reextractingIds.has(doc.id) ? 'Extracting...' : 'Re-extract'}
+              </button>
+            )}
+            {doc.status === 'FAILED' && !doc.rejectionReason && onRetry && (
+              <button
+                className={styles.retryBtn}
+                onClick={() => onRetry(doc.id)}
+                disabled={retryingIds.has(doc.id)}
+                title="Retry processing this document"
+              >
+                {retryingIds.has(doc.id) ? 'Retrying...' : 'Retry'}
               </button>
             )}
             {doc.status === 'PROCESSING' ? (

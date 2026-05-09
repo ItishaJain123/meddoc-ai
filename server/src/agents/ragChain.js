@@ -1,7 +1,8 @@
-const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
-const { ChatPromptTemplate } = require('@langchain/core/prompts');
-const { StringOutputParser } = require('@langchain/core/output_parsers');
-const { similaritySearch } = require('./embeddingService');
+const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
+const { ChatPromptTemplate } = require("@langchain/core/prompts");
+const { StringOutputParser } = require("@langchain/core/output_parsers");
+const { similaritySearch } = require("./embeddingService");
+const { retryWithBackoff } = require("../utils/retryWithBackoff");
 
 const SYSTEM_PROMPT = `You are MedDoc AI, a helpful medical document assistant.
 You have memory of this conversation. Use the conversation history to understand follow-up questions like "what does that mean?", "is that normal?", or "tell me more about it."
@@ -51,13 +52,13 @@ Context from patient's documents:
 {context}`;
 
 const prompt = ChatPromptTemplate.fromMessages([
-  ['system', SYSTEM_PROMPT],
-  ['human', '{question}'],
+  ["system", SYSTEM_PROMPT],
+  ["human", "{question}"],
 ]);
 
 const llm = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_API_KEY,
-  model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+  apiKey: process.env.MEDDOC_GOOGLE_API_KEY,
+  model: process.env.MEDDOC_GEMINI_MODEL,
   temperature: 0.3,
   maxOutputTokens: 1024,
 });
@@ -77,26 +78,36 @@ async function askQuestion(userId, question, history = []) {
 
   if (relevantChunks.length === 0) {
     return {
-      answer: "I couldn't find any uploaded documents to answer your question. Please upload your medical reports first.",
+      answer:
+        "I couldn't find any uploaded documents to answer your question. Please upload your medical reports first.",
       sources: [],
     };
   }
 
   // 2. Format context from retrieved chunks
   const context = relevantChunks
-    .map((chunk, i) => `[Document: ${chunk.metadata?.fileName || 'Unknown'}, Chunk ${i + 1}]\n${chunk.content}`)
-    .join('\n\n---\n\n');
+    .map(
+      (chunk, i) =>
+        `[Document: ${chunk.metadata?.fileName || "Unknown"}, Chunk ${i + 1}]\n${chunk.content}`,
+    )
+    .join("\n\n---\n\n");
 
   // 3. Format conversation history
-  const historyText = history.length === 0
-    ? 'No previous messages.'
-    : history
-        .map((m) => `${m.role === 'USER' ? 'Patient' : 'MedDoc AI'}: ${m.content}`)
-        .join('\n');
+  const historyText =
+    history.length === 0
+      ? "No previous messages."
+      : history
+          .map(
+            (m) =>
+              `${m.role === "USER" ? "Patient" : "MedDoc AI"}: ${m.content}`,
+          )
+          .join("\n");
 
   // 4. Build and run chain
   const chain = prompt.pipe(llm).pipe(outputParser);
-  const answer = await chain.invoke({ context, question, history: historyText });
+  const answer = await retryWithBackoff(() =>
+    chain.invoke({ context, question, history: historyText }),
+  );
 
   // 4. Deduplicate sources
   const sourceMap = new Map();
@@ -105,8 +116,8 @@ async function askQuestion(userId, question, history = []) {
     if (id && !sourceMap.has(id)) {
       sourceMap.set(id, {
         documentId: id,
-        fileName: chunk.metadata?.fileName || 'Unknown',
-        fileType: chunk.metadata?.fileType || '',
+        fileName: chunk.metadata?.fileName || "Unknown",
+        fileType: chunk.metadata?.fileType || "",
       });
     }
   }

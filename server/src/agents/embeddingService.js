@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const { GoogleGenerativeAIEmbeddings } = require('@langchain/google-genai');
 
-const VECTOR_STORE_DIR = process.env.VECTOR_STORE_DIR || path.join(__dirname, '../../vector_store');
+const VECTOR_STORE_DIR = process.env.MEDDOC_VECTOR_STORE_DIR || path.join(__dirname, '../../vector_store');
 
 if (!fs.existsSync(VECTOR_STORE_DIR)) {
   fs.mkdirSync(VECTOR_STORE_DIR, { recursive: true });
@@ -10,8 +10,8 @@ if (!fs.existsSync(VECTOR_STORE_DIR)) {
 
 function getEmbeddings() {
   return new GoogleGenerativeAIEmbeddings({
-    apiKey: process.env.GOOGLE_API_KEY,
-    model: process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004',
+    apiKey: process.env.MEDDOC_GOOGLE_API_KEY,
+    model: process.env.MEDDOC_GEMINI_EMBEDDING_MODEL || 'text-embedding-004',
   });
 }
 

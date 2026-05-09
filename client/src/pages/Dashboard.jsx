@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import OnboardingModal, { useOnboarding } from '../components/Onboarding/OnboardingModal';
+import { generateHealthReportPDF } from '../utils/generatePDF';
 import {
   PieChart, Pie, Cell,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceArea,
@@ -315,12 +317,24 @@ function Dashboard() {
   const { getToken }  = useAuth();
   const navigate      = useNavigate();
   const [data, setData]       = useState(null);
+  const [error, setError]     = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding();
+
+  function handleExportPDF() {
+    if (!data) return;
+    setExporting(true);
+    setTimeout(() => {
+      generateHealthReportPDF(data, user?.fullName || user?.firstName);
+      setExporting(false);
+    }, 50);
+  }
 
   useEffect(() => {
     fetchDashboard(getToken)
       .then(setData)
-      .catch(console.error)
+      .catch((err) => { console.error(err); setError(err.message); })
       .finally(() => setLoading(false));
   }, [getToken]);
 
@@ -329,6 +343,7 @@ function Dashboard() {
 
   return (
     <div className={styles.page}>
+      {showOnboarding && <OnboardingModal onDismiss={dismissOnboarding} />}
 
       {/* ── Header ── */}
       <div className={styles.header}>
@@ -337,6 +352,11 @@ function Dashboard() {
           <h1 className={styles.name}>{user?.firstName || 'there'}</h1>
         </div>
         <div className={styles.headerActions}>
+          {data && (
+            <button className={styles.btnSecondary} onClick={handleExportPDF} disabled={exporting}>
+              {exporting ? 'Generating...' : 'Export PDF'}
+            </button>
+          )}
           <button className={styles.btnSecondary} onClick={() => navigate('/documents')}>Upload Report</button>
           <button className={styles.btnPrimary}   onClick={() => navigate('/chat')}>Ask the AI</button>
         </div>
@@ -347,7 +367,12 @@ function Dashboard() {
           {Array.from({ length: 9 }).map((_, i) => <div key={i} className={styles.skeleton} />)}
         </div>
       ) : !data ? (
-        <EmptyState icon="⚠️" message="Could not load dashboard. Please try refreshing." />
+        <div className={styles.errorState}>
+          <span className={styles.emptyIcon}>⚠️</span>
+          <p className={styles.emptyMsg}>Could not load dashboard. Please try refreshing.</p>
+          {error && <code className={styles.errorDetail}>{error}</code>}
+          <p className={styles.errorHint}>Make sure the server is running on port 5000 and MySQL is started.</p>
+        </div>
       ) : (
         <>
           {/* ── Stats row ── */}

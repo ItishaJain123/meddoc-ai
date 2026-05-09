@@ -1,16 +1,17 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { retryWithBackoff } = require("../utils/retryWithBackoff");
 
 /**
  * Extract structured health metrics from document text using Gemini.
  * Returns array of metric objects ready to insert into HealthMetric table.
  */
 async function extractHealthMetrics(extractedText, documentId, userId) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.MEDDOC_GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_VERIFICATION_MODEL || 'gemini-2.0-flash-lite',
+    model: process.env.MEDDOC_GEMINI_MODEL,
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const prompt = `You are a medical data extractor. Extract every measurable lab value or health metric from the document below.
 
@@ -45,26 +46,29 @@ ${extractedText.slice(0, 6000)}
 ---`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
     const text = result.response.text().trim();
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) return [];
 
     const metrics = JSON.parse(match[0]);
-    return metrics.map((m) => ({
-      documentId,
-      userId,
-      metricName: String(m.metricName || '').trim(),
-      value: parseFloat(m.value),
-      unit: m.unit || null,
-      refRangeLow: m.refRangeLow != null ? parseFloat(m.refRangeLow) : null,
-      refRangeHigh: m.refRangeHigh != null ? parseFloat(m.refRangeHigh) : null,
-      isAbnormal: Boolean(m.isAbnormal),
-      isCritical: Boolean(m.isCritical),
-      reportDate: new Date(m.reportDate || today),
-    })).filter((m) => m.metricName && !isNaN(m.value));
+    return metrics
+      .map((m) => ({
+        documentId,
+        userId,
+        metricName: String(m.metricName || "").trim(),
+        value: parseFloat(m.value),
+        unit: m.unit || null,
+        refRangeLow: m.refRangeLow != null ? parseFloat(m.refRangeLow) : null,
+        refRangeHigh:
+          m.refRangeHigh != null ? parseFloat(m.refRangeHigh) : null,
+        isAbnormal: Boolean(m.isAbnormal),
+        isCritical: Boolean(m.isCritical),
+        reportDate: new Date(m.reportDate || today),
+      }))
+      .filter((m) => m.metricName && !isNaN(m.value));
   } catch (err) {
-    console.error('Metric extraction failed:', err.message);
+    console.error("Metric extraction failed:", err.message);
     return [];
   }
 }

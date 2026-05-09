@@ -1,10 +1,14 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { retryWithBackoff } = require("../utils/retryWithBackoff");
 
-const VALID_SEVERITIES = ['Normal', 'Mild', 'Moderate', 'Severe', 'Critical'];
+const VALID_SEVERITIES = ["Normal", "Mild", "Moderate", "Severe", "Critical"];
 
 function parseJsonArray(raw) {
   // Strip markdown code fences if present
-  const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  const cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
   // Extract first JSON array
   const match = cleaned.match(/\[[\s\S]*\]/);
   if (!match) return null;
@@ -12,12 +16,12 @@ function parseJsonArray(raw) {
 }
 
 async function extractDocumentFindings(extractedText, documentId, userId) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.MEDDOC_GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.MEDDOC_GEMINI_MODEL,
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const prompt = `You are a medical findings extractor. Extract qualitative clinical findings from the medical document text below.
 
@@ -59,39 +63,55 @@ ${extractedText.slice(0, 8000)}
 ---`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
     const raw = result.response.text().trim();
-    console.log('[findingExtractor] raw response (first 300):', raw.slice(0, 300));
+    console.log(
+      "[findingExtractor] raw response (first 300):",
+      raw.slice(0, 300),
+    );
 
     let findings;
     try {
       findings = parseJsonArray(raw);
     } catch (parseErr) {
-      console.error('[findingExtractor] JSON parse error:', parseErr.message, '| raw:', raw.slice(0, 200));
+      console.error(
+        "[findingExtractor] JSON parse error:",
+        parseErr.message,
+        "| raw:",
+        raw.slice(0, 200),
+      );
       return [];
     }
 
     if (!findings || !Array.isArray(findings)) {
-      console.error('[findingExtractor] result is not an array:', raw.slice(0, 200));
+      console.error(
+        "[findingExtractor] result is not an array:",
+        raw.slice(0, 200),
+      );
       return [];
     }
 
-    console.log(`[findingExtractor] extracted ${findings.length} findings for document ${documentId}`);
+    console.log(
+      `[findingExtractor] extracted ${findings.length} findings for document ${documentId}`,
+    );
 
     return findings
-      .filter((f) => f && typeof f.finding === 'string' && f.finding.trim().length > 0)
+      .filter(
+        (f) =>
+          f && typeof f.finding === "string" && f.finding.trim().length > 0,
+      )
       .map((f) => ({
         documentId,
         userId,
-        documentType: String(f.documentType || 'Other').trim(),
-        bodyPart:     f.bodyPart ? String(f.bodyPart).trim() : null,
-        finding:      String(f.finding).trim().slice(0, 500),
-        severity:     VALID_SEVERITIES.includes(f.severity) ? f.severity : 'Normal',
-        isAbnormal:   Boolean(f.isAbnormal),
-        reportDate:   new Date(f.reportDate || today),
+        documentType: String(f.documentType || "Other").trim(),
+        bodyPart: f.bodyPart ? String(f.bodyPart).trim() : null,
+        finding: String(f.finding).trim().slice(0, 500),
+        severity: VALID_SEVERITIES.includes(f.severity) ? f.severity : "Normal",
+        isAbnormal: Boolean(f.isAbnormal),
+        reportDate: new Date(f.reportDate || today),
       }));
   } catch (err) {
-    console.error('[findingExtractor] extraction failed:', err.message);
+    console.error("[findingExtractor] extraction failed:", err.message);
     return [];
   }
 }

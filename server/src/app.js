@@ -32,7 +32,7 @@ app.use(helmet({
 }));
 
 // ── HTTPS enforcement in production ───────────────────────────────────────────
-if (process.env.NODE_ENV === 'production') {
+if (process.env.MEDDOC_NODE_ENV === 'production') {
   app.use((req, res, next) => {
     if (req.headers['x-forwarded-proto'] !== 'https') {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.MEDDOC_CLIENT_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -85,7 +85,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   // Never leak stack traces to the client
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production'
+    error: process.env.MEDDOC_NODE_ENV === 'production'
       ? 'An unexpected error occurred'
       : err.message || 'Internal Server Error',
   });

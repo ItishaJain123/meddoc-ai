@@ -1,5 +1,5 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const prisma = require('../config/db');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const prisma = require("../config/db");
 
 /**
  * Generate a structured health summary for a user across all their documents.
@@ -11,42 +11,48 @@ async function generateHealthSummary(userId) {
 
   // 2. Fetch all READY documents
   const documents = await prisma.document.findMany({
-    where: { userId, status: 'READY' },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, fileName: true, fileType: true, extractedText: true, createdAt: true },
+    where: { userId, status: "READY" },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      fileName: true,
+      fileType: true,
+      extractedText: true,
+      createdAt: true,
+    },
   });
 
   if (documents.length === 0) {
-    throw new Error('No processed documents found to generate summary.');
+    throw new Error("No processed documents found to generate summary.");
   }
 
   // 3. Fetch all health metrics
   const metrics = await prisma.healthMetric.findMany({
     where: { userId },
-    orderBy: [{ metricName: 'asc' }, { reportDate: 'asc' }],
+    orderBy: [{ metricName: "asc" }, { reportDate: "asc" }],
   });
 
   // 4. Build context for Gemini
   const docContext = documents
     .map((d) => {
-      const text = d.extractedText?.startsWith('NOT_MEDICAL:')
-        ? ''
-        : (d.extractedText || '').slice(0, 2000);
+      const text = d.extractedText?.startsWith("NOT_MEDICAL:")
+        ? ""
+        : (d.extractedText || "").slice(0, 2000);
       return `[Document: ${d.fileName} — ${new Date(d.createdAt).toLocaleDateString()}]\n${text}`;
     })
-    .join('\n\n---\n\n');
+    .join("\n\n---\n\n");
 
   const abnormalMetrics = metrics.filter((m) => m.isAbnormal);
   const criticalMetrics = metrics.filter((m) => m.isCritical);
 
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.MEDDOC_GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.MEDDOC_GEMINI_MODEL,
   });
 
   const prompt = `You are generating a health summary report for a patient to share with their doctor.
 
-Patient: ${user?.fullName || 'Patient'}
+Patient: ${user?.fullName || "Patient"}
 Number of documents: ${documents.length}
 Total metrics tracked: ${metrics.length}
 Abnormal values: ${abnormalMetrics.length}
@@ -56,7 +62,7 @@ Document content:
 ${docContext}
 
 Abnormal metrics found:
-${abnormalMetrics.map((m) => `- ${m.metricName}: ${m.value} ${m.unit || ''} (ref: ${m.refRangeLow ?? '?'}-${m.refRangeHigh ?? '?'}) [${m.isCritical ? 'CRITICAL' : 'ABNORMAL'}]`).join('\n') || 'None'}
+${abnormalMetrics.map((m) => `- ${m.metricName}: ${m.value} ${m.unit || ""} (ref: ${m.refRangeLow ?? "?"}-${m.refRangeHigh ?? "?"}) [${m.isCritical ? "CRITICAL" : "ABNORMAL"}]`).join("\n") || "None"}
 
 Generate a comprehensive health briefing JSON with this exact structure:
 {
@@ -83,10 +89,10 @@ Respond with ONLY the JSON object, no markdown.`;
   const result = await model.generateContent(prompt);
   const text = result.response.text().trim();
   const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Failed to generate summary');
+  if (!match) throw new Error("Failed to generate summary");
 
   const summary = JSON.parse(match[0]);
-  summary.patientName = user?.fullName || 'Patient';
+  summary.patientName = user?.fullName || "Patient";
   summary.generatedAt = new Date().toISOString();
   summary.documentCount = documents.length;
 

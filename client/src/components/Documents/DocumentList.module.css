@@ -141,6 +141,28 @@
   color: #fff;
 }
 
+.retryBtn {
+  background: none;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.retryBtn:hover:not(:disabled) {
+  background: var(--danger-light);
+}
+
+.retryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .empty {
   text-align: center;
   padding: 3rem 1rem;
@@ -174,4 +196,12 @@
 .empty p {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .item  { flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; }
+  .info  { min-width: calc(100% - 52px); }
+  .badge { margin-left: auto; }
+  .reextractBtn, .retryBtn, .cancelBtn, .deleteBtn { font-size: 0.7rem; }
 }

@@ -6,6 +6,7 @@ import {
   deleteDocument,
   pollDocumentStatus,
   reextractDocument,
+  retryDocument,
 } from '../services/documentService';
 
 export function useDocuments() {
@@ -16,6 +17,7 @@ export function useDocuments() {
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [reextractingIds, setReextractingIds] = useState(new Set());
+  const [retryingIds, setRetryingIds] = useState(new Set());
   const toastIdRef = useRef(0);
 
   function addToast(type, title, message = null) {
@@ -127,5 +129,21 @@ export function useDocuments() {
     }
   }
 
-  return { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, toasts, removeToast };
+  async function retry(id) {
+    if (retryingIds.has(id)) return;
+    setRetryingIds((prev) => new Set([...prev, id]));
+    try {
+      await retryDocument(id, getToken);
+      setDocuments((prev) =>
+        prev.map((d) => d.id === id ? { ...d, status: 'PROCESSING', rejectionReason: null } : d)
+      );
+      addToast('info', 'Retrying...', 'Document has been queued for reprocessing.');
+    } catch (err) {
+      addToast('error', 'Retry failed', err.message);
+    } finally {
+      setRetryingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  }
+
+  return { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, retry, retryingIds, toasts, removeToast };
 }

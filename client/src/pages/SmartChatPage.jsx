@@ -25,6 +25,7 @@ function SmartChatPage() {
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const prevMessageCount = useRef(0);
 
@@ -50,6 +51,7 @@ function SmartChatPage() {
 
   async function handleSelectConversation(id) {
     setActiveId(id);
+    setSidebarOpen(false);
     await loadConversation(id);
   }
 
@@ -66,9 +68,14 @@ function SmartChatPage() {
 
   return (
     <div className={styles.container}>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <button className={styles.newChatBtn} onClick={handleNewChat}>
+      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarVisible : ''}`}>
+        <button className={styles.newChatBtn} onClick={() => { handleNewChat(); setSidebarOpen(false); }}>
           + New Chat
         </button>
         <div className={styles.convList}>
@@ -100,6 +107,13 @@ function SmartChatPage() {
       {/* Chat area */}
       <div className={styles.chatArea}>
         <div className={styles.chatToolbar}>
+          <button
+            className={styles.sidebarToggle}
+            onClick={() => setSidebarOpen((v) => !v)}
+            title="Toggle conversations"
+          >
+            ☰ Chats
+          </button>
           <button
             className={`${styles.ttsBtn} ${ttsEnabled ? styles.ttsBtnActive : ''}`}
             onClick={() => { setTtsEnabled((v) => !v); if (ttsEnabled) stopSpeaking(); }}
