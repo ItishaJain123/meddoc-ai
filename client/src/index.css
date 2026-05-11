@@ -53,6 +53,30 @@
   --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+/* ── Neon chart palette — light ─────────────────────────────── */
+:root {
+  --neon-green:  #00c96b;
+  --neon-blue:   #2563eb;
+  --neon-pink:   #f01757;
+  --neon-amber:  #d97706;
+  --neon-purple: #7c3aed;
+  --neon-orange: #ea580c;
+  --neon-cyan:   #0891b2;
+  --neon-lime:   #65a30d;
+}
+
+/* ── Neon chart palette — dark ──────────────────────────────── */
+[data-theme="dark"] {
+  --neon-green:  #00ff88;
+  --neon-blue:   #00d4ff;
+  --neon-pink:   #ff2d78;
+  --neon-amber:  #ffe600;
+  --neon-purple: #c084fc;
+  --neon-orange: #ff7043;
+  --neon-cyan:   #00ffff;
+  --neon-lime:   #b2ff00;
+}
+
 /* ── Dark mode tokens ───────────────────────────────────────── */
 [data-theme="dark"] {
   --primary:        #3B82F6;

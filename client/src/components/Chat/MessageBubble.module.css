@@ -8,58 +8,77 @@
 .userWrapper      { flex-direction: row-reverse; }
 .assistantWrapper { flex-direction: row; }
 
-.avatar {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ── Avatars ─────────────────────────────────────────────────── */
+.avatarAi {
+  width: 34px; height: 34px;
   border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  color: #fff;
+}
+.avatarAi svg { width: 15px; height: 15px; }
+[data-theme="dark"] .avatarAi {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--neon-blue) 45%, transparent);
 }
 
-.avatar svg {
-  width: 16px;
-  height: 16px;
+.avatarUser {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--neon-purple) 12%, var(--bg));
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
   color: var(--text-secondary);
 }
+.avatarUser svg { width: 15px; height: 15px; }
 
+/* ── Bubbles ─────────────────────────────────────────────────── */
 .bubble {
-  max-width: 70%;
-  padding: 0.8rem 1rem;
-  border-radius: 16px;
-  line-height: 1.6;
+  max-width: 72%;
+  padding: 0.85rem 1.1rem;
+  border-radius: 18px;
+  line-height: 1.65;
 }
 
 .userBubble {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
   color: #fff;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 5px;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--neon-blue) 30%, transparent);
+}
+[data-theme="dark"] .userBubble {
+  box-shadow: 0 2px 16px color-mix(in srgb, var(--neon-blue) 45%, transparent),
+              0 0 1px color-mix(in srgb, var(--neon-purple) 60%, transparent);
 }
 
 .assistantBubble {
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 5px;
+}
+[data-theme="dark"] .assistantBubble {
+  border-color: color-mix(in srgb, var(--neon-blue) 18%, var(--border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--neon-blue) 8%, transparent);
 }
 
+/* ── Content ─────────────────────────────────────────────────── */
 .content {
   font-size: 0.9rem;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+/* ── Footer (sources + speak) ────────────────────────────────── */
 .footer {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-top: 0.65rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--border);
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid color-mix(in srgb, var(--neon-blue) 15%, var(--border));
 }
 
 .sources {
@@ -71,41 +90,39 @@
 }
 
 .sourcesLabel {
-  font-size: 0.73rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   font-weight: 600;
 }
 
 .sourceTag {
-  font-size: 0.71rem;
-  background: var(--bg);
-  color: var(--text-secondary);
-  padding: 2px 8px;
+  font-size: 0.7rem;
+  background: color-mix(in srgb, var(--neon-blue) 8%, var(--surface));
+  color: var(--neon-blue);
+  border: 1px solid color-mix(in srgb, var(--neon-blue) 25%, transparent);
+  padding: 2px 9px;
   border-radius: 20px;
-  border: 1px solid var(--border);
   max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+[data-theme="dark"] .sourceTag {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--neon-blue) 20%, transparent);
+}
 
 .speakBtn {
-  background: none;
-  border: none;
+  background: none; border: none;
   cursor: pointer;
-  opacity: 0.45;
-  padding: 0;
+  padding: 4px;
+  border-radius: 6px;
   flex-shrink: 0;
-  transition: opacity 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.12s;
+  display: flex; align-items: center;
 }
-
-.speakBtn svg {
-  width: 15px;
-  height: 15px;
-  color: var(--primary);
+.speakBtn svg { width: 14px; height: 14px; }
+.speakBtn:hover {
+  color: var(--neon-blue);
+  background: color-mix(in srgb, var(--neon-blue) 10%, transparent);
 }
-
-.speakBtn:hover { opacity: 1; }

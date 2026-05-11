@@ -27,6 +27,7 @@ async function getDashboard(req, res) {
     recentConversations,
     recentFindings,
     allDocDates,
+    activeGoals,
   ] = await Promise.all([
     prisma.document.count({ where: { userId, status: 'READY' } }),
     prisma.healthMetric.count({ where: { userId } }),
@@ -67,6 +68,10 @@ async function getDashboard(req, res) {
     prisma.document.findMany({
       where: { userId },
       select: { createdAt: true },
+    }),
+    prisma.healthGoal.findMany({
+      where: { userId, isActive: true },
+      orderBy: { createdAt: 'desc' },
     }),
   ]);
 
@@ -148,6 +153,53 @@ async function getDashboard(req, res) {
     .filter((r) => r.score != null)
     .slice(0, 7);
 
+  // ── Abnormal values (latest reading per metric that is out of range) ─────────
+  const abnormalValues = Object.values(latestPerMetric)
+    .filter((m) => m.isAbnormal || m.isCritical)
+    .map((m) => ({
+      metricName:   m.metricName,
+      value:        m.value,
+      unit:         m.unit,
+      refRangeLow:  m.refRangeLow,
+      refRangeHigh: m.refRangeHigh,
+      isCritical:   Boolean(m.isCritical),
+      reportDate:   m.reportDate,
+    }))
+    .sort((a, b) => (b.isCritical ? 1 : 0) - (a.isCritical ? 1 : 0));
+
+  // ── Goals with live progress ──────────────────────────────────────────────
+  const latestValues = Object.values(latestPerMetric);
+  const goalsWithProgress = activeGoals.map((goal) => {
+    const goalName = goal.metricName.toLowerCase().trim();
+    const match = latestValues.find((m) => {
+      const s = m.metricName.toLowerCase().trim();
+      return s === goalName || s.includes(goalName) || goalName.includes(s);
+    });
+    const currentValue = match?.value ?? null;
+    let achieved = null;
+    let progress = 0;
+    if (currentValue !== null) {
+      achieved = goal.direction === 'above'
+        ? currentValue >= goal.targetValue
+        : currentValue <= goal.targetValue;
+      progress = goal.direction === 'above'
+        ? Math.min(100, Math.round((currentValue / goal.targetValue) * 100))
+        : currentValue > 0
+          ? Math.min(100, Math.round((goal.targetValue / currentValue) * 100))
+          : 0;
+    }
+    return {
+      id:           goal.id,
+      metricName:   goal.metricName,
+      targetValue:  goal.targetValue,
+      direction:    goal.direction,
+      unit:         match?.unit ?? goal.unit ?? '',
+      currentValue,
+      progress,
+      achieved,
+    };
+  });
+
   res.json({
     stats: {
       totalDocuments,
@@ -170,6 +222,8 @@ async function getDashboard(req, res) {
     })),
     recentDocuments,
     recentConversations,
+    abnormalValues,
+    goals: goalsWithProgress,
   });
 }
 
