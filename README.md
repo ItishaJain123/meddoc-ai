@@ -2,7 +2,7 @@
 
 **Your personal medical document assistant** — upload medical reports and instantly understand what your values mean, how they compare to safe ranges, and how they change over time. No medical background needed.
 
-**Live demo:** [meddoc-ai.vercel.app](https://meddoc-ai.vercel.app)
+**Live demo:** [meddoc-ai.vercel.app](https://meddoc-ai.vercel.app) — click **"Try with sample data"** to explore without uploading anything.
 
 ---
 
