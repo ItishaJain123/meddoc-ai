@@ -19,6 +19,7 @@ Patients receive lab reports full of numbers and jargon. MedDoc AI turns them in
 - 💊 **Medications** — auto-extracted from prescriptions, with browser reminders
 - 🎯 **Health goals** — one-click goals suggested from your abnormal values, tracked automatically as new reports arrive
 - 📋 **Doctor-ready summary** — AI-generated health briefing, printable and shareable via expiring link
+- 🫧 **Companion desktop app** — an on-screen buddy that reminds you to drink water, eat, take medicines, and move, synced to your MedDoc account (see [`companion/`](./companion))
 - 🌙 Full dark mode, command palette (Ctrl+K), demo mode with sample data
 
 ## Tech stack
@@ -127,6 +128,10 @@ server/src/
   utils/          encryption, goal progress, share tokens, retry
   prisma/         schema (User, Document, HealthMetric, Conversation,
                   DocumentFinding, HealthGoal, …)
+
+companion/        Electron desktop app — on-screen reminders (water,
+                  meals, medicines, movement), Clerk-gated, see its
+                  own README for setup
 ```
 
 ## Security notes
