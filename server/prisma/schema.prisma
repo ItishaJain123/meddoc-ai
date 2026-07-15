@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  // NOTE: local dev runs MySQL; production runs PostgreSQL. Prisma requires a
-  // static provider, so switch this to "postgresql" before deploying.
+  // Local dev runs MySQL; production (Render) runs PostgreSQL. Prisma requires
+  // a static provider, so the Render build command rewrites this line to
+  // "postgresql" via sed before `prisma db push` runs. Do not hardcode
+  // "postgresql" here — that would break local dev.
   provider = "mysql"
   url      = env("MEDDOC_DATABASE_URL")
 }
