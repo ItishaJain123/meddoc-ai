@@ -1,7 +1,133 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { Bell, BellOff, Plus, X } from 'lucide-react';
 import { fetchMedications } from '../services/medicationService';
 import styles from './MedicationsPage.module.css';
+
+/* ── Reminder schedules (stored locally in this browser) ─────────────────── */
+
+const REMINDERS_KEY = 'meddoc-med-reminders';
+
+function loadReminders() {
+  try {
+    return JSON.parse(localStorage.getItem(REMINDERS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function nextDoseLabel(times) {
+  if (!times?.length) return null;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const sorted = [...times].sort();
+  const upcoming = sorted.find((t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m > nowMins;
+  });
+  return upcoming ? `Next dose today at ${upcoming}` : `Next dose tomorrow at ${sorted[0]}`;
+}
+
+function useMedReminders() {
+  const [reminders, setReminders] = useState(loadReminders);
+
+  const update = useCallback((medId, patch) => {
+    setReminders((prev) => {
+      const next = {
+        ...prev,
+        [medId]: { enabled: false, times: ['09:00'], ...prev[medId], ...patch },
+      };
+      localStorage.setItem(REMINDERS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // Fire a browser notification when a scheduled time comes up (app must be open)
+  useEffect(() => {
+    const fired = new Set();
+    const interval = setInterval(() => {
+      if (Notification?.permission !== 'granted') return;
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      for (const [medId, r] of Object.entries(loadReminders())) {
+        const key = `${medId}-${now.toDateString()}-${hhmm}`;
+        if (r.enabled && r.times?.includes(hhmm) && !fired.has(key)) {
+          fired.add(key);
+          new Notification('Medication reminder', {
+            body: `Time to take your medication (${hhmm}). Open MedDoc AI → Medications for details.`,
+          });
+        }
+      }
+    }, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { reminders, update };
+}
+
+function ReminderPanel({ medId, reminder, onUpdate }) {
+  const r = reminder ?? { enabled: false, times: ['09:00'] };
+
+  async function toggle() {
+    if (!r.enabled && Notification && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+    onUpdate(medId, { enabled: !r.enabled });
+  }
+
+  function setTime(i, value) {
+    const times = [...r.times];
+    times[i] = value;
+    onUpdate(medId, { times });
+  }
+
+  return (
+    <div className={styles.reminder}>
+      <button
+        className={`${styles.reminderToggle} ${r.enabled ? styles.reminderOn : ''}`}
+        onClick={toggle}
+        title={r.enabled ? 'Turn reminders off' : 'Remind me (browser notification while the app is open)'}
+      >
+        {r.enabled ? <Bell size={13} /> : <BellOff size={13} />}
+        {r.enabled ? 'Reminders on' : 'Remind me'}
+      </button>
+
+      {r.enabled && (
+        <div className={styles.reminderTimes}>
+          {r.times.map((t, i) => (
+            <span key={i} className={styles.timeChip}>
+              <input
+                type="time"
+                value={t}
+                onChange={(e) => setTime(i, e.target.value)}
+                className={styles.timeInput}
+              />
+              {r.times.length > 1 && (
+                <button
+                  className={styles.timeRemove}
+                  onClick={() => onUpdate(medId, { times: r.times.filter((_, j) => j !== i) })}
+                  title="Remove time"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </span>
+          ))}
+          {r.times.length < 4 && (
+            <button
+              className={styles.timeAdd}
+              onClick={() => onUpdate(medId, { times: [...r.times, '21:00'] })}
+              title="Add another time"
+            >
+              <Plus size={12} />
+            </button>
+          )}
+          <span className={styles.nextDose}>{nextDoseLabel(r.times)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PillIcon() {
   return (
@@ -45,42 +171,85 @@ function EmptyState() {
   );
 }
 
-function MedCard({ med }) {
+/**
+ * Split an extracted medication line into its parts, e.g.
+ * "Atorvastatin 10 mg — 1 tablet at bedtime (cholesterol management)"
+ *  → name "Atorvastatin 10 mg", schedule "1 tablet at bedtime",
+ *    purpose "cholesterol management"
+ */
+function parseMedication(text) {
+  const clean = text.replace(/^[-•*]\s*/, '').trim();
+  const purposeMatch = clean.match(/\(([^)]+)\)\s*$/);
+  const purpose = purposeMatch ? purposeMatch[1].trim() : null;
+  const base = purposeMatch ? clean.slice(0, purposeMatch.index).trim() : clean;
+  const parts = base.split(/\s*—\s*|\s+-\s+/);
+  return {
+    name: parts[0].trim(),
+    schedule: parts.slice(1).join(' — ').trim() || null,
+    purpose,
+  };
+}
+
+/** Accent color by what the medication is for */
+function purposeTone(purpose) {
+  const p = (purpose || '').toLowerCase();
+  if (/cholesterol|lipid|heart|cardiac|blood pressure|hypertension/.test(p)) return 'rose';
+  if (/sugar|glucose|diabet|hba1c|metabol/.test(p)) return 'blue';
+  if (/vitamin|deficien|supplement|calcium|iron|b12|d3/.test(p)) return 'amber';
+  return 'teal';
+}
+
+function MedCard({ med, reminder, onReminderUpdate }) {
   const lines = med.finding
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
+  const [firstLine, ...extraLines] = lines;
+  const { name, schedule, purpose } = parseMedication(firstLine || '');
+  const tone = purposeTone(purpose);
 
   const date = med.reportDate
     ? new Date(med.reportDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
     : null;
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
+    <div className={`${styles.card} ${styles[`accent_${tone}`]}`}>
+      <div className={styles.cardTop}>
         <div className={styles.cardIcon}>
           <PillIcon />
         </div>
-        <div className={styles.cardMeta}>
-          {date && (
-            <span className={styles.metaItem}>
-              <CalendarIcon /> {date}
-            </span>
-          )}
-          {med.documentName && (
-            <span className={styles.metaItem}>
-              <DocIcon /> {med.documentName}
-            </span>
-          )}
+        <div className={styles.cardTitleWrap}>
+          <h3 className={styles.medName}>{name}</h3>
+          {schedule && <p className={styles.medSchedule}>{schedule}</p>}
         </div>
       </div>
-      <ul className={styles.medList}>
-        {lines.map((line, i) => (
-          <li key={i} className={styles.medItem}>
-            {line.replace(/^[-•*]\s*/, '')}
-          </li>
-        ))}
-      </ul>
+
+      {purpose && <span className={styles.purposeBadge}>{purpose}</span>}
+
+      {extraLines.length > 0 && (
+        <ul className={styles.medList}>
+          {extraLines.map((line, i) => (
+            <li key={i} className={styles.medItem}>
+              {line.replace(/^[-•*]\s*/, '')}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ReminderPanel medId={med.id} reminder={reminder} onUpdate={onReminderUpdate} />
+
+      <div className={styles.cardFooter}>
+        {med.documentName && (
+          <span className={styles.metaItem}>
+            <DocIcon /> {med.documentName}
+          </span>
+        )}
+        {date && (
+          <span className={styles.metaItem}>
+            <CalendarIcon /> {date}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -90,6 +259,7 @@ export default function MedicationsPage() {
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { reminders, update: updateReminder } = useMedReminders();
 
   useEffect(() => {
     fetchMedications(getToken)
@@ -105,7 +275,9 @@ export default function MedicationsPage() {
           <h1 className={styles.title}>Medications</h1>
           <p className={styles.subtitle}>All medications extracted from your prescription documents</p>
         </div>
-        <div className={styles.badge}>{medications.length} prescription{medications.length !== 1 ? 's' : ''}</div>
+        <div className={styles.badge}>
+          {loading ? '…' : `${medications.length} prescription${medications.length !== 1 ? 's' : ''}`}
+        </div>
       </div>
 
       {loading && (
@@ -128,7 +300,7 @@ export default function MedicationsPage() {
       {!loading && !error && medications.length > 0 && (
         <div className={styles.grid}>
           {medications.map((med) => (
-            <MedCard key={med.id} med={med} />
+            <MedCard key={med.id} med={med} reminder={reminders[med.id]} onReminderUpdate={updateReminder} />
           ))}
         </div>
       )}

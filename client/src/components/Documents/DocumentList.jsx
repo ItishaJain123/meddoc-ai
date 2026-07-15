@@ -7,6 +7,15 @@ const STATUS_CONFIG = {
 };
 
 function getStatusConfig(doc) {
+  if (doc.status === 'FAILED' && doc.identityMismatch) {
+    return {
+      label: 'Different Patient',
+      className: 'failed',
+      tooltip: doc.extractedPatientName
+        ? `This report appears to belong to ${doc.extractedPatientName}. You can only upload your own reports.`
+        : 'This report appears to belong to a different person. You can only upload your own reports.',
+    };
+  }
   if (doc.status === 'FAILED' && doc.rejectionReason) {
     return { label: 'Not Medical', className: 'failed', tooltip: doc.rejectionReason };
   }
@@ -46,7 +55,7 @@ function FileIcon({ type }) {
   );
 }
 
-function DocumentList({ documents, onDelete, onReextract, reextractingIds = new Set(), onRetry, retryingIds = new Set() }) {
+function DocumentList({ documents, onDelete, onReextract, reextractingIds = new Set(), onRetry, retryingIds = new Set(), onConfirmIdentity, confirmingIds = new Set() }) {
   if (documents.length === 0) {
     return (
       <div className={styles.empty}>
@@ -67,12 +76,18 @@ function DocumentList({ documents, onDelete, onReextract, reextractingIds = new 
       {documents.map((doc) => {
         const status = getStatusConfig(doc);
         return (
-          <li key={doc.id} className={styles.item}>
-            <div className={styles.iconWrap}>
+          <li
+            key={doc.id}
+            className={`${styles.item} ${doc.status === 'PROCESSING' ? styles.itemProcessing : ''}`}
+          >
+            <div className={`${styles.iconWrap} ${doc.fileType === 'application/pdf' ? styles.iconPdf : styles.iconImage}`}>
               <FileIcon type={doc.fileType} />
             </div>
             <div className={styles.info}>
-              <span className={styles.name} title={doc.fileName}>{doc.fileName}</span>
+              <span className={styles.name} title={doc.fileName}>
+                {doc.fileName.startsWith('Sample — ') && <span className={styles.sampleBadge}>SAMPLE</span>}
+                {doc.fileName}
+              </span>
               <span className={styles.meta}>
                 {formatSize(doc.fileSize)} · {formatDate(doc.createdAt)}
                 {doc.pageCount ? ` · ${doc.pageCount} page${doc.pageCount > 1 ? 's' : ''}` : ''}
@@ -85,12 +100,22 @@ function DocumentList({ documents, onDelete, onReextract, reextractingIds = new 
                 className={styles.reextractBtn}
                 onClick={() => onReextract(doc.id)}
                 disabled={reextractingIds.has(doc.id)}
-                title="Re-extract findings (use if Medications page is empty)"
+                title="Re-analyse this document (use if Medications page is empty)"
               >
-                {reextractingIds.has(doc.id) ? 'Extracting...' : 'Re-extract'}
+                {reextractingIds.has(doc.id) ? 'Analysing...' : 'Re-analyse'}
               </button>
             )}
-            {doc.status === 'FAILED' && !doc.rejectionReason && onRetry && (
+            {doc.status === 'FAILED' && doc.identityMismatch && onConfirmIdentity && (
+              <button
+                className={styles.confirmBtn}
+                onClick={() => onConfirmIdentity(doc.id)}
+                disabled={confirmingIds.has(doc.id)}
+                title="Confirm this report is yours (the name was read incorrectly)"
+              >
+                {confirmingIds.has(doc.id) ? 'Confirming...' : 'This is me'}
+              </button>
+            )}
+            {doc.status === 'FAILED' && !doc.rejectionReason && !doc.identityMismatch && onRetry && (
               <button
                 className={styles.retryBtn}
                 onClick={() => onRetry(doc.id)}

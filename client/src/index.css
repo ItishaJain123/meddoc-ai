@@ -11,6 +11,13 @@
   --accent:           #06B6D4;
   --accent-light:     #ECFEFF;
 
+  /* Brand gradient — the ONE gradient in the app (matches the logo).
+     Used sparingly: primary buttons, active nav pill, hero accents, main chart line. */
+  --brand-gradient:       linear-gradient(135deg, #2563EB, #06B6D4);
+  --brand-gradient-hover: linear-gradient(135deg, #1D4ED8, #0891B2);
+  --brand-from:           #2563EB;
+  --brand-to:             #06B6D4;
+
   /* Semantic */
   --success:          #059669;
   --success-light:    #ECFDF5;
@@ -37,11 +44,15 @@
   --border-light:     #F1F5F9;
 
   /* Elevation */
-  --shadow-xs:  0 1px 2px rgba(15,23,42,0.05);
-  --shadow-sm:  0 1px 4px rgba(15,23,42,0.07);
-  --shadow-md:  0 4px 16px rgba(15,23,42,0.08);
-  --shadow-lg:  0 8px 32px rgba(15,23,42,0.10);
-  --shadow-xl:  0 16px 48px rgba(15,23,42,0.14);
+  --shadow-xs:  0 1px 2px rgba(15,23,42,0.06);
+  --shadow-sm:  0 2px 6px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.05);
+  --shadow-md:  0 6px 20px rgba(15,23,42,0.09), 0 2px 6px rgba(15,23,42,0.05);
+  --shadow-lg:  0 12px 36px rgba(15,23,42,0.12);
+  --shadow-xl:  0 20px 56px rgba(15,23,42,0.16);
+
+  /* Page atmosphere — soft brand wash at the top of the content area */
+  --page-glow: radial-gradient(900px 420px at 18% -8%, rgba(37, 99, 235, 0.07), transparent 62%),
+               radial-gradient(700px 360px at 92% -12%, rgba(6, 182, 212, 0.05), transparent 55%);
 
   /* Radius */
   --radius-sm:  6px;
@@ -53,28 +64,31 @@
   --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ── Neon chart palette — light ─────────────────────────────── */
+/* ── Chart palette — light ──────────────────────────────────────
+   Restrained: one accent (blue) for data, green/amber/red reserved
+   for semantic meaning (good / caution / critical). The old --neon-*
+   names are kept so existing styles keep working. */
 :root {
-  --neon-green:  #00c96b;
+  --neon-green:  #059669;
   --neon-blue:   #2563eb;
-  --neon-pink:   #f01757;
+  --neon-pink:   #dc2626;
   --neon-amber:  #d97706;
-  --neon-purple: #7c3aed;
-  --neon-orange: #ea580c;
-  --neon-cyan:   #0891b2;
-  --neon-lime:   #65a30d;
+  --neon-purple: #2563eb;
+  --neon-orange: #d97706;
+  --neon-cyan:   #2563eb;
+  --neon-lime:   #059669;
 }
 
-/* ── Neon chart palette — dark ──────────────────────────────── */
+/* ── Chart palette — dark (desaturated, not neon) ───────────── */
 [data-theme="dark"] {
-  --neon-green:  #00ff88;
-  --neon-blue:   #00d4ff;
-  --neon-pink:   #ff2d78;
-  --neon-amber:  #ffe600;
-  --neon-purple: #c084fc;
-  --neon-orange: #ff7043;
-  --neon-cyan:   #00ffff;
-  --neon-lime:   #b2ff00;
+  --neon-green:  #34d399;
+  --neon-blue:   #60a5fa;
+  --neon-pink:   #f87171;
+  --neon-amber:  #fbbf24;
+  --neon-purple: #60a5fa;
+  --neon-orange: #fbbf24;
+  --neon-cyan:   #60a5fa;
+  --neon-lime:   #34d399;
 }
 
 /* ── Dark mode tokens ───────────────────────────────────────── */
@@ -103,18 +117,27 @@
 
   --text-primary:   #F1F5F9;
   --text-secondary: #CBD5E1;
-  --text-muted:     #64748B;
+  --text-muted:     #94A3B8;
 
-  --bg:             #0F172A;
-  --surface:        #1E293B;
-  --border:         #334155;
-  --border-light:   #1E293B;
+  /* Blue-tinted dark surfaces — richer than plain slate */
+  --bg:             #0B1222;
+  --surface:        #131E33;
+  --border:         #24334D;
+  --border-light:   #1A2740;
+
+  --brand-gradient:       linear-gradient(135deg, #3B82F6, #22D3EE);
+  --brand-gradient-hover: linear-gradient(135deg, #2563EB, #06B6D4);
+  --brand-from:           #3B82F6;
+  --brand-to:             #22D3EE;
+
+  --page-glow: radial-gradient(900px 460px at 18% -8%, rgba(59, 130, 246, 0.14), transparent 60%),
+               radial-gradient(700px 380px at 92% -12%, rgba(34, 211, 238, 0.08), transparent 55%);
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.5);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.45);
+  --shadow-md: 0 6px 22px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 36px rgba(0,0,0,0.6);
+  --shadow-xl: 0 20px 56px rgba(0,0,0,0.7);
 }
 
 /* ── Reset ──────────────────────────────────────────────────── */

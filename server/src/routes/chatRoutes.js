@@ -3,6 +3,7 @@ const { requireAuth } = require("../middleware/authMiddleware");
 const { chatLimiter } = require("../middleware/rateLimiter");
 const {
   ask,
+  askStream,
   getConversations,
   getConversation,
   removeConversation,
@@ -11,6 +12,7 @@ const {
 router.use(requireAuth);
 
 router.post("/ask", chatLimiter, ask);
+router.post("/ask/stream", chatLimiter, askStream);
 router.get("/conversations", getConversations);
 router.get("/conversations/:id", getConversation);
 router.delete("/conversations/:id", removeConversation);

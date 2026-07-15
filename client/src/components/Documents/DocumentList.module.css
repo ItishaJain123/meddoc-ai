@@ -38,6 +38,22 @@
   color: var(--primary);
 }
 
+/* File-type identity: red tile for PDFs, purple for images */
+.iconPdf       { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.iconPdf svg   { color: var(--danger); }
+.iconImage     { background: color-mix(in srgb, var(--purple) 12%, transparent); }
+.iconImage svg { color: var(--purple); }
+
+/* Soft pulsing glow while the AI is reading the document */
+.itemProcessing {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  animation: docGlow 1.8s ease-in-out infinite;
+}
+@keyframes docGlow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 22%, transparent); }
+  50%      { box-shadow: 0 0 0 5px transparent; }
+}
+
 .info {
   flex: 1;
   display: flex;
@@ -163,6 +179,44 @@
   cursor: not-allowed;
 }
 
+/* Marks seeded demo documents so users always know what's real */
+.sampleBadge {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--neon-purple, #8b5cf6);
+  background: color-mix(in srgb, var(--neon-purple, #8b5cf6) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--neon-purple, #8b5cf6) 35%, transparent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+.confirmBtn {
+  background: none;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .empty {
   text-align: center;
   padding: 3rem 1rem;
@@ -203,5 +257,5 @@
   .item  { flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; }
   .info  { min-width: calc(100% - 52px); }
   .badge { margin-left: auto; }
-  .reextractBtn, .retryBtn, .cancelBtn, .deleteBtn { font-size: 0.7rem; }
+  .reextractBtn, .retryBtn, .confirmBtn, .cancelBtn, .deleteBtn { font-size: 0.7rem; }
 }

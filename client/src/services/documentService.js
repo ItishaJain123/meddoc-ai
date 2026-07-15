@@ -42,6 +42,36 @@ export async function deleteDocument(id, getToken) {
   return res.json();
 }
 
+export async function fetchDocumentContent(id, getToken) {
+  const headers = await getAuthHeaders(getToken);
+  const res = await fetch(`${API_URL}/documents/${id}/content`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to load document content');
+  }
+  return res.json();
+}
+
+export async function seedDemoData(getToken) {
+  const headers = await getAuthHeaders(getToken);
+  const res = await fetch(`${API_URL}/demo/seed`, { method: 'POST', headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to load sample data');
+  }
+  return res.json();
+}
+
+export async function clearDemoData(getToken) {
+  const headers = await getAuthHeaders(getToken);
+  const res = await fetch(`${API_URL}/demo`, { method: 'DELETE', headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to clear sample data');
+  }
+  return res.json();
+}
+
 export async function pollDocumentStatus(id, getToken) {
   const headers = await getAuthHeaders(getToken);
   const res = await fetch(`${API_URL}/documents/${id}/status`, { headers });
@@ -58,6 +88,19 @@ export async function retryDocument(id, getToken) {
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || 'Retry failed');
+  }
+  return res.json();
+}
+
+export async function confirmDocumentIdentity(id, getToken) {
+  const headers = await getAuthHeaders(getToken);
+  const res = await fetch(`${API_URL}/documents/${id}/confirm-identity`, {
+    method: 'POST',
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Could not confirm the report');
   }
   return res.json();
 }

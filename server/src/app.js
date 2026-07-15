@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env'), override: true });
 const express = require('express');
 const cors    = require('cors');
 const helmet  = require('helmet');
@@ -74,6 +75,8 @@ app.use('/api/summary',    require('./routes/summaryRoutes'));
 app.use('/api/dashboard',   require('./routes/dashboardRoutes'));
 app.use('/api/goals',       require('./routes/goalRoutes'));
 app.use('/api/medications', require('./routes/medicationRoutes'));
+app.use('/api/demo',        require('./routes/demoRoutes'));
+app.use('/api/share',       require('./routes/shareRoutes'));
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {

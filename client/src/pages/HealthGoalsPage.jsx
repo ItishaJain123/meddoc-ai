@@ -34,7 +34,30 @@ function PlusIcon() {
   );
 }
 
-function ProgressBar({ progress, direction }) {
+/**
+ * Sensible goal defaults from a metric's latest reading + safe range:
+ * value above the range → bring it below the upper bound;
+ * value below the range → raise it above the lower bound.
+ */
+function suggestTarget(m) {
+  if (m?.value == null) return null;
+  const { value, refRangeLow: low, refRangeHigh: high } = m;
+  if (high != null && value > high) return { direction: 'below', target: high };
+  if (low != null && value < low) return { direction: 'above', target: low };
+  if (high != null) return { direction: 'below', target: high };
+  if (low != null) return { direction: 'above', target: low };
+  return null;
+}
+
+function formatReading(m) {
+  const range =
+    m.refRangeLow != null && m.refRangeHigh != null
+      ? ` · safe range ${m.refRangeLow}–${m.refRangeHigh}`
+      : '';
+  return `Your latest: ${m.value} ${m.unit || ''}${range}`;
+}
+
+function ProgressBar({ progress }) {
   const color = progress >= 80 ? 'var(--success)' : progress >= 50 ? 'var(--warning)' : 'var(--danger)';
   return (
     <div className={styles.progressWrap}>
@@ -99,6 +122,15 @@ function GoalCard({ goal, onDelete }) {
       {goal.currentValue != null && (
         <ProgressBar progress={goal.progress} direction={goal.direction} />
       )}
+
+      {goal.currentValue != null && goal.lastUpdated && (
+        <p className={styles.cardFoot}>
+          Last reading: {new Date(goal.lastUpdated).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+          {goal.matchedMetricName && goal.matchedMetricName !== goal.metricName
+            ? ` · matched "${goal.matchedMetricName}"`
+            : ''}
+        </p>
+      )}
     </div>
   );
 }
@@ -109,6 +141,7 @@ function AddGoalForm({ metrics, onAdd, onCancel }) {
   const [err, setErr] = useState(null);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const selectedMetric = metrics.find((m) => m.metricName === form.metricName);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -141,7 +174,17 @@ function AddGoalForm({ metrics, onAdd, onCancel }) {
           onChange={(e) => {
             const val = e.target.value;
             const match = metrics.find((m) => m.metricName === val);
-            setForm((f) => ({ ...f, metricName: val, unit: match?.unit ?? f.unit }));
+            setForm((f) => {
+              const next = { ...f, metricName: val, unit: match?.unit ?? f.unit };
+              // Prefill a sensible target from the safe range — the app knows
+              // the medical numbers so the patient doesn't have to
+              const s = suggestTarget(match);
+              if (s) {
+                next.direction = s.direction;
+                next.targetValue = String(s.target);
+              }
+              return next;
+            });
           }}
           placeholder="e.g. Haemoglobin, Blood Pressure"
           required
@@ -149,6 +192,9 @@ function AddGoalForm({ metrics, onAdd, onCancel }) {
         <datalist id="metrics-list">
           {metrics.map((m) => <option key={m.metricName} value={m.metricName} />)}
         </datalist>
+        {selectedMetric?.value != null && (
+          <p className={styles.metricHint}>{formatReading(selectedMetric)}</p>
+        )}
       </div>
 
       <div className={styles.formGrid}>
@@ -234,6 +280,37 @@ export default function HealthGoalsPage() {
 
   const activeGoals = goals.filter((g) => g.isActive);
 
+  // One-click suggestions: abnormal metrics that have a safe range and no goal yet
+  const [addingSuggestion, setAddingSuggestion] = useState(null);
+  const suggestions = metrics
+    .filter((m) =>
+      (m.isAbnormal || m.isCritical) &&
+      suggestTarget(m) != null &&
+      !activeGoals.some((g) => g.metricName.toLowerCase().trim() === m.metricName.toLowerCase().trim()),
+    )
+    .slice(0, 4);
+
+  const handleAddSuggestion = async (m) => {
+    const s = suggestTarget(m);
+    if (!s || addingSuggestion) return;
+    setAddingSuggestion(m.metricName);
+    try {
+      await handleAdd({
+        metricName: m.metricName,
+        targetValue: s.target,
+        direction: s.direction,
+        unit: m.unit || undefined,
+      });
+      // Re-fetch so the new card shows live progress, not just the bare goal
+      const fresh = await fetchGoals(getToken);
+      setGoals(fresh);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAddingSuggestion(null);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
@@ -247,6 +324,32 @@ export default function HealthGoalsPage() {
           </button>
         )}
       </div>
+
+      {/* One-click goals for values currently outside their safe range */}
+      {!loading && suggestions.length > 0 && (
+        <div className={styles.suggestBar}>
+          <span className={styles.suggestLabel}>Suggested from your reports:</span>
+          <div className={styles.suggestChips}>
+            {suggestions.map((m) => {
+              const s = suggestTarget(m);
+              return (
+                <button
+                  key={m.metricName}
+                  className={styles.suggestChip}
+                  onClick={() => handleAddSuggestion(m)}
+                  disabled={addingSuggestion != null}
+                  title={formatReading(m)}
+                >
+                  <PlusIcon />
+                  {addingSuggestion === m.metricName
+                    ? 'Adding…'
+                    : `Bring ${m.metricName} ${s.direction} ${s.target}${m.unit ? ` ${m.unit}` : ''}`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <AddGoalForm

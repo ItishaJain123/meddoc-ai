@@ -1,5 +1,5 @@
 const prisma = require('../config/db');
-const { askQuestion } = require('../agents/ragChain');
+const { askQuestion, askQuestionStream } = require('../agents/ragChain');
 
 /**
  * Get or create a conversation for a user
@@ -80,6 +80,56 @@ async function sendMessage(userId, question, conversationId) {
 }
 
 /**
+ * Streaming version of sendMessage. `emit(event, data)` is called with:
+ *   meta  → { conversationId }         (once, immediately)
+ *   token → { text }                   (per generated chunk)
+ *   done  → { conversationId, message, sources }
+ */
+async function sendMessageStream(userId, question, conversationId, emit) {
+  const conversation = await getOrCreateConversation(userId, conversationId);
+  emit('meta', { conversationId: conversation.id });
+
+  const messageCount = await prisma.message.count({
+    where: { conversationId: conversation.id },
+  });
+  if (messageCount === 0) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { title: generateTitle(question) },
+    });
+  }
+
+  await prisma.message.create({
+    data: { conversationId: conversation.id, role: 'USER', content: question },
+  });
+
+  const recentMessages = await prisma.message.findMany({
+    where: { conversationId: conversation.id },
+    orderBy: { createdAt: 'asc' },
+    take: 8,
+    select: { role: true, content: true },
+  });
+
+  const { answer, sources } = await askQuestionStream(
+    userId,
+    question,
+    recentMessages,
+    (text) => emit('token', { text }),
+  );
+
+  const assistantMessage = await prisma.message.create({
+    data: {
+      conversationId: conversation.id,
+      role: 'ASSISTANT',
+      content: answer,
+      sources,
+    },
+  });
+
+  emit('done', { conversationId: conversation.id, message: assistantMessage, sources });
+}
+
+/**
  * Get all messages in a conversation
  */
 async function getConversationMessages(userId, conversationId) {
@@ -129,6 +179,7 @@ async function deleteConversation(userId, conversationId) {
 
 module.exports = {
   sendMessage,
+  sendMessageStream,
   getConversationMessages,
   listConversations,
   deleteConversation,

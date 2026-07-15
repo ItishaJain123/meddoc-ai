@@ -8,7 +8,84 @@
 .header {
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
+
+.demoBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
+}
+.demoBtn:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-1px); }
+.demoBtn:disabled { opacity: 0.7; cursor: wait; }
+
+.spin { animation: spinAnim 0.8s linear infinite; }
+@keyframes spinAnim { to { transform: rotate(360deg); } }
+
+/* Banner shown while sample data is loaded — keeps demo vs real data honest */
+.sampleBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: color-mix(in srgb, var(--neon-purple, #8b5cf6) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--neon-purple, #8b5cf6) 25%, transparent);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1.1rem;
+}
+.sampleBanner p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.sampleBanner strong { color: var(--text-primary); }
+.clearSampleBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+.clearSampleBtn:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.clearSampleBtn:disabled { opacity: 0.6; cursor: wait; }
+
+@media (max-width: 640px) {
+  .sampleBanner { flex-direction: column; align-items: flex-start; }
+}
+
+.docSkeletons { display: flex; flex-direction: column; gap: 0.75rem; }
+.docSkeleton {
+  height: 68px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmerDocs 1.4s infinite;
+}
+@keyframes shimmerDocs { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 .header h1 {
   font-size: 1.5rem;
