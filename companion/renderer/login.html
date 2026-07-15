@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MedDoc Companion — Sign in</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(160deg, #1E3A8A 0%, #2563EB 55%, #06B6D4 130%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      color: #eff6ff; padding: 24px;
+    }
+    .card { text-align: center; width: 100%; max-width: 380px; }
+    .mascot { font-size: 56px; margin-bottom: 6px; animation: bob 2.4s ease-in-out infinite; }
+    @keyframes bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-8px) } }
+    h1 { font-size: 24px; margin-bottom: 4px; letter-spacing: -.3px; }
+    .sub { font-size: 13px; color: #bfdbfe; margin-bottom: 18px; }
+    .features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 20px; text-align: left;
+    }
+    .feat {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 10px; padding: 8px 10px; font-size: 12px; color: #eff6ff;
+      display: flex; align-items: center; gap: 7px; backdrop-filter: blur(4px);
+    }
+    .feat .e { font-size: 17px; }
+    #clerk-signin { display: flex; justify-content: center; }
+    .status { margin-top: 14px; font-size: 12.5px; color: #bfdbfe; min-height: 18px; }
+    .error { color: #fecaca; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="mascot">🫧</div>
+    <h1>MedDoc Companion</h1>
+    <p class="sub">A little buddy that walks onto your screen to keep you healthy at your desk</p>
+
+    <div class="features">
+      <div class="feat"><span class="e">💧</span> Water reminders</div>
+      <div class="feat"><span class="e">🍱</span> Lunch nudges</div>
+      <div class="feat"><span class="e">💊</span> Medicine on time</div>
+      <div class="feat"><span class="e">🏃</span> Move &amp; stretch</div>
+    </div>
+
+    <div id="clerk-signin"></div>
+    <p class="status" id="status">Loading sign-in…</p>
+  </div>
+  <script src="login.js"></script>
+</body>
+</html>

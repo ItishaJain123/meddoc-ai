@@ -1,0 +1,252 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: transparent; overflow: hidden; height: 100%; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; -webkit-user-select: none; user-select: none; cursor: default; }
+
+:root { --primary: #2563EB; --primary-dark: #1D4ED8; }
+
+.stage {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: flex-end;
+  padding: 8px 14px;
+}
+
+/* ── speech bubble ─────────────────────────────────────────────── */
+.bubble {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #eff4ff 100%);
+  border: 1.5px solid #dbeafe; border-radius: 20px; padding: 14px 16px;
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.3);
+  max-width: 360px; margin-left: 12px; margin-bottom: 2px;
+  opacity: 0; transform: translateY(14px) scale(.9);
+  transition: opacity .35s ease, transform .4s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+}
+.bubble.show { opacity: 1; transform: translateY(0) scale(1); }
+.bubble::after {
+  content: ''; position: absolute; bottom: -9px; left: 46px; width: 18px; height: 18px;
+  background: #eff4ff; border-right: 1.5px solid #dbeafe; border-bottom: 1.5px solid #dbeafe;
+  transform: rotate(45deg);
+}
+.bubble-emoji { font-size: 30px; line-height: 1; animation: pop 2s ease-in-out infinite; }
+@keyframes pop { 0%,100%{ transform: scale(1) } 50%{ transform: scale(1.18) rotate(-6deg) } }
+.bubble-text { flex: 1; }
+.title { font-size: 15px; font-weight: 800; color: #1e3a8a; margin-bottom: 3px; letter-spacing: -.2px; }
+.body { font-size: 12.5px; color: #2563EB; line-height: 1.35; }
+.actions { display: flex; flex-direction: column; gap: 6px; }
+.actions button {
+  cursor: pointer; border: none; border-radius: 10px; padding: 7px 15px;
+  font-size: 12px; font-weight: 700; white-space: nowrap; transition: transform .1s, filter .15s;
+}
+.actions button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.done { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.35); }
+.snooze { background: #e0edff; color: var(--primary-dark); }
+
+/* ── scene + buddy ─────────────────────────────────────────────── */
+.scene { position: relative; width: 220px; height: 220px; margin-left: 2px; }
+.buddy {
+  width: 220px; height: 220px; overflow: visible; cursor: pointer;
+  transform: translateX(-170px); /* waiting off-screen, stage left */
+}
+.buddy.in { transform: translateX(0); } /* pinned at arrived position after the walk */
+.arm, .eye, .prop, .foot, #torso, #rig, .cheek, #mouth, #shadow, .sp, .antenna-tip,
+.water-fill, .steam, .drop, .food-bit { transform-box: fill-box; }
+.water-fill { transform-origin: center bottom; }
+.drop, .food-bit, .steam { opacity: 0; }
+.arm-l { transform-origin: 46px 108px; }
+.arm-r { transform-origin: 154px 108px; }
+#torso { transform-origin: center bottom; }
+#rig   { transform-origin: center bottom; }
+.eye   { transform-origin: center; }
+#shadow{ transform-origin: center; }
+
+/* character palettes */
+.char-blob { --body:#38bdf8; --body-light:#bae6fd; --body-dark:#0ea5e9; --belly:#e0f2fe; }
+.char-cat  { --body:#fdba74; --body-light:#fed7aa; --body-dark:#fb923c; --belly:#ffedd5; }
+.char-robot{ --body:#a5b4fc; --body-light:#e0e7ff; --body-dark:#818cf8; --belly:#eef2ff; }
+.acc { display: none; }
+.char-cat  .acc-cat   { display: block; }
+.char-robot .acc-robot{ display: block; }
+.char-robot .antenna-tip { animation: blinkTip 1.6s ease-in-out infinite; }
+@keyframes blinkTip { 0%,100%{ opacity: 1 } 50%{ opacity: .35 } }
+
+/* props hidden unless their mode is on */
+.prop { opacity: 0; }
+.mode-water    .prop-cup  { opacity: 1; }
+.mode-lunch    .prop-bowl { opacity: 1; }
+.mode-sit      .prop-bell { opacity: 1; }
+.mode-medicine .prop-pill { opacity: 1; }
+
+/* blinking — soft squish of the whole eye */
+.eye { animation: blink 4.4s infinite; }
+.eye-r { animation-delay: .05s; }
+@keyframes blink {
+  0%, 93.5%, 97.5%, 100% { transform: scaleY(1); }
+  95.5% { transform: scaleY(0.08); }
+}
+
+/* sparkles hidden by default */
+.sp { opacity: 0; }
+
+/* ── 1) HOP-WALK IN — squishy bounces, no creepy limbs ─────────── */
+.buddy.walking { animation: hopIn 1.25s cubic-bezier(.35,0,.3,1) forwards; }
+@keyframes hopIn {
+  0%   { transform: translateX(-170px) translateY(0); }
+  12%  { transform: translateX(-140px) translateY(-26px) rotate(4deg); }
+  24%  { transform: translateX(-112px) translateY(0); }
+  36%  { transform: translateX(-84px)  translateY(-26px) rotate(4deg); }
+  48%  { transform: translateX(-56px)  translateY(0); }
+  60%  { transform: translateX(-30px)  translateY(-26px) rotate(4deg); }
+  72%  { transform: translateX(-8px)   translateY(0); }
+  86%  { transform: translateX(0)      translateY(-12px); }
+  100% { transform: translateX(0)      translateY(0); }
+}
+/* squash & stretch synced with the hops */
+.walking #rig { animation: squish 1.25s ease-in-out forwards; }
+@keyframes squish {
+  0%,24%,48%,72%,100% { transform: scale(1.06, .92); }
+  12%,36%,60%,86%     { transform: scale(.94, 1.08); }
+}
+.walking #shadow { animation: shHop 1.25s ease-in-out forwards; }
+@keyframes shHop {
+  0%,24%,48%,72%,100% { transform: scaleX(1); opacity:.2 }
+  12%,36%,60%,86%     { transform: scaleX(.55); opacity:.08 }
+}
+
+/* idle: soft breathing + tiny sway */
+.buddy.idle #torso { animation: breathe 2.8s ease-in-out infinite; }
+@keyframes breathe { 0%,100%{ transform: scale(1) } 50%{ transform: scale(1.035,0.965) } }
+
+/* wave hello with the little nub arm */
+.buddy.wave .arm-r { animation: wave .45s ease-in-out 3; }
+@keyframes wave { 0%,100%{ transform: rotate(0) } 50%{ transform: rotate(-70deg) translateY(-6px) } }
+
+/* ── 2a) WATER — tumbler travels to the mouth, water level drops ── */
+.mode-water .arm-r    { animation: liftArm 2.6s ease-in-out infinite; }
+.mode-water .prop-cup { animation: cupToMouth 2.6s ease-in-out infinite; }
+.mode-water .water-fill { animation: drainWater 2.6s ease-in-out infinite; }
+.mode-water #rig      { animation: sipLean 2.6s ease-in-out infinite; }
+.mode-water .drop.d1  { animation: dropFall 2.6s ease-in-out infinite; }
+.mode-water .drop.d2  { animation: dropFall 2.6s ease-in-out infinite .18s; }
+@keyframes liftArm    { 0%,90%,100%{ transform: rotate(0) } 25%,65%{ transform: rotate(-22deg) } }
+@keyframes cupToMouth {
+  0%,100% { transform: translate(0,0) rotate(0); }
+  25%,65% { transform: translate(-46px,-4px) rotate(-34deg); } /* rim at the mouth */
+  90%     { transform: translate(0,0) rotate(0); }
+}
+@keyframes drainWater {
+  0%,22%  { transform: scaleY(1); }
+  65%,92% { transform: scaleY(0.25); }  /* drinks it down */
+  100%    { transform: scaleY(1); }     /* refill for next sip */
+}
+@keyframes sipLean { 0%,90%,100%{ transform: rotate(0) } 30%,60%{ transform: rotate(-7deg) } }
+@keyframes dropFall {
+  0%,28%  { opacity: 0; transform: translate(0,0); }
+  38%     { opacity: 1; }
+  60%     { opacity: 0; transform: translate(-4px,26px); }
+  100%    { opacity: 0; }
+}
+
+/* ── 2b) LUNCH — bowl held in front, food travels bowl → mouth ──── */
+.mode-lunch .arm-r    { animation: none; transform: rotate(-8deg); }
+.mode-lunch .prop-bowl{ animation: bowlHold 1.1s ease-in-out infinite; }
+.mode-lunch .food-bit { animation: eatBite 1.1s ease-in infinite; }
+.mode-lunch #rig      { animation: munch 1.1s ease-in-out infinite; }
+.mode-lunch .cheek    { animation: cheekPuff 1.1s ease-in-out infinite; }
+.mode-lunch .steam.s1 { animation: steamRise 1.6s ease-in-out infinite; }
+.mode-lunch .steam.s2 { animation: steamRise 1.6s ease-in-out infinite .4s; }
+@keyframes bowlHold { 0%,100%{ transform: translate(-42px,14px) } 50%{ transform: translate(-42px,17px) } }
+@keyframes eatBite {
+  0%   { opacity: 0; transform: translate(0,0) scale(1); }
+  12%  { opacity: 1; }
+  45%  { opacity: 1; transform: translate(-15px,-13px) scale(1); } /* up to the mouth */
+  58%  { opacity: 0; transform: translate(-15px,-13px) scale(0.2); } /* nom — swallowed */
+  100% { opacity: 0; }
+}
+@keyframes munch     { 0%,100%{ transform: scale(1) } 55%{ transform: scale(1.05,.94) } 75%{ transform: scale(.98,1.02) } }
+@keyframes cheekPuff { 0%,45%,100%{ opacity:.5; transform: scale(1) } 60%,80%{ opacity:.9; transform: scale(1.3) } }
+@keyframes steamRise {
+  0%   { opacity: 0; transform: translateY(4px); }
+  40%  { opacity: .9; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* ── 2c) EXERCISE — energetic hops, dumbbell curls, sparkles ───── */
+.mode-sit #rig { animation: workout .55s cubic-bezier(.3,0,.4,1) infinite; }
+@keyframes workout {
+  0%,100% { transform: translateY(0) scale(1); }
+  20%     { transform: translateY(3px) scale(1.08,.88); }
+  55%     { transform: translateY(-34px) scale(.94,1.08) rotate(3deg); }
+  85%     { transform: translateY(0) scale(1); }
+}
+.mode-sit .arm-r { animation: curlR .55s ease-in-out infinite; }
+.mode-sit .arm-l { animation: curlL .55s ease-in-out infinite; }
+@keyframes curlR { 0%,100%{ transform: rotate(0) } 55%{ transform: rotate(-95deg) } }
+@keyframes curlL { 0%,100%{ transform: rotate(0) } 55%{ transform: rotate(95deg) } }
+.mode-sit #shadow { animation: shJump .55s ease-in-out infinite; }
+@keyframes shJump { 0%,100%{ transform: scaleX(1); opacity:.2 } 55%{ transform: scaleX(.55); opacity:.07 } }
+.mode-sit .sp1 { animation: spark .55s ease-out infinite; }
+.mode-sit .sp2 { animation: spark .55s ease-out infinite .15s; }
+.mode-sit .sp3 { animation: spark .55s ease-out infinite .3s; }
+@keyframes spark {
+  0%{ opacity:0; transform: translateY(0) scale(.4) }
+  40%{ opacity:1 }
+  100%{ opacity:0; transform: translateY(-22px) scale(1.2) }
+}
+
+/* ── 2d) MEDICINE — pill travels to the mouth and is gulped ────── */
+.mode-medicine .arm-r    { animation: liftArm 2.4s ease-in-out infinite; }
+.mode-medicine .prop-pill{ animation: pillToMouth 2.4s ease-in-out infinite; }
+.mode-medicine #rig      { animation: gulp 2.4s ease-in-out infinite; }
+@keyframes pillToMouth {
+  0%      { opacity: 1; transform: translate(0,0) rotate(0); }
+  30%,50% { opacity: 1; transform: translate(-48px,-2px) rotate(-30deg); } /* at the mouth */
+  58%     { opacity: 0; transform: translate(-52px,-2px) scale(.3); }      /* swallowed */
+  95%,100%{ opacity: 1; transform: translate(0,0); }                       /* next dose */
+}
+@keyframes gulp {
+  0%,100% { transform: rotate(0) scale(1); }
+  38%,52% { transform: rotate(-6deg); }
+  62%     { transform: scale(1.04,.94); } /* the gulp */
+}
+
+/* happy open mouth during actions */
+.mode-water #mouth, .mode-lunch #mouth, .mode-sit #mouth, .mode-medicine #mouth {
+  d: path("M90 116 Q100 128 110 116");
+}
+
+/* ── petting reaction (click) ──────────────────────────────────── */
+.buddy.happy #rig { animation: happyHop .55s cubic-bezier(.34,1.56,.64,1) 2; }
+@keyframes happyHop {
+  0%,100% { transform: translateY(0) rotate(0) scale(1); }
+  30%     { transform: translateY(-18px) rotate(-5deg) scale(.96,1.06); }
+  60%     { transform: translateY(-18px) rotate(5deg) scale(.96,1.06); }
+  85%     { transform: translateY(0) scale(1.07,.9); }
+}
+.buddy.happy .cheek { opacity: .95; }
+.buddy.happy #mouth { d: path("M88 114 Q100 130 112 114"); }
+
+.hearts { position: absolute; left: 88px; top: 42px; pointer-events: none; z-index: 5; }
+.hearts span { position: absolute; font-size: 19px; opacity: 0; }
+.hearts.go span { animation: floatHeart 1.05s ease-out forwards; }
+.hearts.go span:nth-child(2){ animation-delay:.12s; left: 22px; }
+.hearts.go span:nth-child(3){ animation-delay:.24s; left: -18px; }
+@keyframes floatHeart {
+  0%{ opacity:0; transform: translateY(0) scale(.5) }
+  30%{ opacity:1 }
+  100%{ opacity:0; transform: translateY(-50px) scale(1.15) }
+}
+
+/* ── 3) HOP OUT ────────────────────────────────────────────────── */
+.buddy.leaving { animation: hopOut .95s cubic-bezier(.35,0,.5,1) forwards; }
+@keyframes hopOut {
+  0%   { transform: translateX(0) translateY(0); }
+  18%  { transform: translateX(36px)  translateY(-24px) rotate(5deg); }
+  36%  { transform: translateX(76px)  translateY(0); }
+  54%  { transform: translateX(120px) translateY(-24px) rotate(5deg); }
+  72%  { transform: translateX(168px) translateY(0); }
+  100% { transform: translateX(250px) translateY(-16px); opacity: 0; }
+}
+.leaving #rig { animation: squish .95s ease-in-out forwards; }
+.leaving #shadow { animation: shHop .95s ease-in-out forwards; }
+.bubble.leaving { opacity: 0; transform: translateY(14px) scale(.9); }

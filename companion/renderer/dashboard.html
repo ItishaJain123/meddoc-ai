@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MedDoc Companion</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background:
+        radial-gradient(900px 400px at 90% -10%, #dbeafe 0%, transparent 60%),
+        radial-gradient(700px 300px at -10% 110%, #cffafe 0%, transparent 55%),
+        linear-gradient(180deg, #f4f8ff 0%, #eef4ff 100%);
+      color: #1e3a8a; padding: 22px; min-height: 100vh;
+    }
+
+    /* ── hero header ── */
+    .heroCard {
+      position: relative; overflow: hidden;
+      background: linear-gradient(120deg, #1E3A8A 0%, #2563EB 60%, #06B6D4 130%);
+      border-radius: 20px; padding: 22px 26px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 20px;
+      box-shadow: 0 14px 34px rgba(37, 99, 235, 0.3);
+    }
+    .heroCard::after {
+      content: ''; position: absolute; right: -50px; top: -70px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: rgba(255,255,255,.08);
+    }
+    .heroCard::before {
+      content: ''; position: absolute; right: 120px; bottom: -80px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: rgba(255,255,255,.06);
+    }
+    .mini-buddy {
+      width: 66px; height: 66px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 28%, #bae6fd, #38bdf8 70%, #0ea5e9);
+      position: relative; flex-shrink: 0;
+      box-shadow: 0 8px 18px rgba(0,0,0,.22);
+      animation: buddyBob 2.6s ease-in-out infinite;
+    }
+    @keyframes buddyBob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-7px) } }
+    .mini-buddy::before, .mini-buddy::after {
+      content: ''; position: absolute; top: 24px; width: 9px; height: 13px;
+      border-radius: 50%; background: #1e293b;
+      animation: miniBlink 4.4s infinite;
+    }
+    .mini-buddy::before { left: 17px; } .mini-buddy::after { right: 17px; }
+    @keyframes miniBlink { 0%,94%,98%,100%{ transform: scaleY(1) } 96%{ transform: scaleY(.1) } }
+    .mini-buddy .smile {
+      position: absolute; left: 50%; top: 41px; width: 16px; height: 8px; margin-left: -8px;
+      border: 3px solid #1e293b; border-top: none; border-radius: 0 0 16px 16px;
+    }
+    .heroText { flex: 1; z-index: 1; }
+    .heroText h1 { color: #fff; font-size: 21px; letter-spacing: -.3px; margin-bottom: 3px; }
+    .heroText p { color: #bfdbfe; font-size: 13px; }
+    .heroActions { display: flex; gap: 10px; align-items: center; z-index: 1; }
+    .user { font-size: 12.5px; color: #bfdbfe; }
+
+    /* ── buttons ── */
+    button {
+      cursor: pointer; border: none; border-radius: 10px; padding: 9px 15px;
+      font-size: 13px; font-weight: 700; transition: transform .12s, box-shadow .12s, filter .12s;
+      background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white;
+      box-shadow: 0 4px 12px rgba(37,99,235,.3);
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    button:active { transform: translateY(0); }
+    button.ghost { background: #ffffff; color: #1D4ED8; box-shadow: 0 2px 8px rgba(37,99,235,.14); border: 1px solid #dbeafe; }
+    button.small { padding: 5px 11px; font-size: 12px; }
+    .heroActions button.ghost { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); box-shadow: none; }
+
+    /* ── cards grid ── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card {
+      background: rgba(255,255,255,.82); backdrop-filter: blur(8px);
+      border-radius: 18px; padding: 20px;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.09);
+      border: 1px solid rgba(219, 234, 254, .9);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,99,235,.13); }
+    .card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; color: #1e3a8a; }
+    .hint { font-weight: 400; font-size: 11.5px; color: #60a5fa; }
+    .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 13.5px; color: #334e8c; }
+    .row label { flex: 1; }
+
+    input[type="number"], input[type="time"], input[type="text"] {
+      border: 1.5px solid #dbeafe; border-radius: 9px; padding: 7px 10px; font-size: 13px; width: 96px;
+      background: #fff; color: #1e3a8a; font-weight: 600; outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    input[type="text"] { width: 148px; }
+
+    /* checkbox → pill switch */
+    input[type="checkbox"] {
+      appearance: none; width: 42px; height: 24px; border-radius: 99px;
+      background: #dbeafe; position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0;
+    }
+    input[type="checkbox"]::after {
+      content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(30,58,138,.25); transition: left .2s;
+    }
+    input[type="checkbox"]:checked { background: linear-gradient(135deg, #2563EB, #06B6D4); }
+    input[type="checkbox"]:checked::after { left: 21px; }
+
+    /* ── character picker ── */
+    .characters { display: flex; gap: 12px; }
+    .char {
+      flex: 1; text-align: center; padding: 14px 8px 12px; border-radius: 16px;
+      border: 2.5px solid #e0edff; cursor: pointer; transition: all .18s; background: #fff;
+      position: relative;
+    }
+    .char:hover { border-color: #93c5fd; transform: translateY(-3px); }
+    .char.selected { border-color: #2563EB; background: linear-gradient(180deg,#eff6ff,#e0f2fe); box-shadow: 0 8px 20px rgba(37,99,235,.18); }
+    .char.selected::after {
+      content: '✓'; position: absolute; top: -9px; right: -7px; width: 22px; height: 22px;
+      background: linear-gradient(135deg,#2563EB,#06B6D4); color: #fff; border-radius: 50%;
+      font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 8px rgba(37,99,235,.4);
+    }
+    .char svg { width: 62px; height: 62px; }
+    .char:hover svg { animation: charWiggle .5s ease-in-out; }
+    @keyframes charWiggle { 0%,100%{ transform: rotate(0) } 30%{ transform: rotate(-7deg) } 65%{ transform: rotate(7deg) } }
+    .char .name { font-size: 12.5px; margin-top: 5px; font-weight: 700; color: #1e3a8a; }
+    .char .desc { font-size: 10.5px; color: #60a5fa; }
+
+    /* ── medicines ── */
+    .med-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(90deg,#eff6ff,#f0fbff); border: 1px solid #e0edff;
+      border-radius: 11px; padding: 9px 12px; margin-bottom: 7px; font-size: 13px;
+    }
+    .med-times { color: #2563EB; font-size: 12px; font-weight: 600; }
+    .add-med { display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
+    .empty-meds { font-size: 13px; color: #93c5fd; }
+
+    /* ── test tiles ── */
+    .tests { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .tests button {
+      background: #fff; color: #1e3a8a; border: 1.5px solid #e0edff; box-shadow: 0 3px 10px rgba(37,99,235,.07);
+      padding: 14px 8px; border-radius: 14px; font-size: 12.5px; display: flex; flex-direction: column; gap: 6px; align-items: center;
+    }
+    .tests button span { font-size: 26px; transition: transform .15s; }
+    .tests button:hover { border-color: #93c5fd; }
+    .tests button:hover span { transform: scale(1.25) rotate(-8deg); }
+
+    .savebar { margin-top: 18px; display: flex; gap: 12px; align-items: center; }
+    .savebar button { padding: 11px 26px; font-size: 14px; border-radius: 12px; }
+    .saved { color: #059669; font-size: 13px; font-weight: 700; opacity: 0; transition: opacity .3s; }
+    .saved.show { opacity: 1; }
+
+    /* ── onboarding modal ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(30, 58, 138, 0.5); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; z-index: 10;
+    }
+    .modal {
+      background: #fff; border-radius: 22px; padding: 30px; width: 430px; text-align: center;
+      box-shadow: 0 24px 60px rgba(30,58,138,.35); animation: modalIn .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes modalIn { from{ opacity:0; transform: translateY(18px) scale(.94) } to{ opacity:1; transform: none } }
+    .modal .big { font-size: 46px; margin-bottom: 6px; }
+    .modal h2 { font-size: 19px; margin-bottom: 8px; color: #1e3a8a; }
+    .modal p { font-size: 13px; color: #2563EB; margin-bottom: 20px; line-height: 1.5; }
+    .modal .choices { display: flex; gap: 10px; justify-content: center; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- hero -->
+  <div class="heroCard">
+    <div class="mini-buddy"><div class="smile"></div></div>
+    <div class="heroText">
+      <h1>Your companion is on duty 🛡️</h1>
+      <p>Water, lunch, medicines and movement — it's got you covered while you work.</p>
+    </div>
+    <div class="heroActions">
+      <span class="user" id="userEmail"></span>
+      <button class="ghost small" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🐣 Choose your companion</h2>
+      <div class="characters" id="characters">
+        <div class="char" data-char="blob">
+          <svg viewBox="0 0 200 200"><defs><radialGradient id="pb" cx="38%" cy="28%" r="80%"><stop offset="0%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#0ea5e9"/></radialGradient></defs><path fill="url(#pb)" d="M100 38 C140 38 162 70 162 108 C162 146 136 168 100 168 C64 168 38 146 38 108 C38 70 60 38 100 38 Z"/><ellipse cx="78" cy="100" rx="10" ry="14" fill="#1e293b"/><ellipse cx="122" cy="100" rx="10" ry="14" fill="#1e293b"/><circle cx="82" cy="94" r="4" fill="#fff"/><circle cx="126" cy="94" r="4" fill="#fff"/><ellipse cx="60" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><ellipse cx="140" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><path d="M92 120 Q100 128 108 120" stroke="#1e293b" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>
+          <div class="name">Bubbles</div><div class="desc">calm &amp; caring</div>
+        </div>
+        <div class="char" data-char="cat">
+          <svg viewBox="0 0 200 200"><defs><radialGradient id="pc" cx="38%" cy="28%" r="80%"><stop offset="0%" stop-color="#fed7aa"/><stop offset="100%" stop-color="#fb923c"/></radialGradient></defs><path d="M60 58 C54 34 62 26 70 30 C78 34 84 44 82 52 Z" fill="#fdba74"/><path d="M140 58 C146 34 138 26 130 30 C122 34 116 44 118 52 Z" fill="#fdba74"/><path fill="url(#pc)" d="M100 38 C140 38 162 70 162 108 C162 146 136 168 100 168 C64 168 38 146 38 108 C38 70 60 38 100 38 Z"/><ellipse cx="78" cy="100" rx="10" ry="14" fill="#1e293b"/><ellipse cx="122" cy="100" rx="10" ry="14" fill="#1e293b"/><circle cx="82" cy="94" r="4" fill="#fff"/><circle cx="126" cy="94" r="4" fill="#fff"/><ellipse cx="60" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><ellipse cx="140" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><path d="M92 120 Q100 128 108 120" stroke="#1e293b" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>
+          <div class="name">Miso</div><div class="desc">playful nagger</div>
+        </div>
+        <div class="char" data-char="robot">
+          <svg viewBox="0 0 200 200"><defs><radialGradient id="pr" cx="38%" cy="28%" r="80%"><stop offset="0%" stop-color="#e0e7ff"/><stop offset="100%" stop-color="#818cf8"/></radialGradient></defs><rect x="97" y="24" width="6" height="18" rx="3" fill="#818cf8"/><circle cx="100" cy="21" r="6.5" fill="#fbbf24"/><path fill="url(#pr)" d="M100 38 C140 38 162 70 162 108 C162 146 136 168 100 168 C64 168 38 146 38 108 C38 70 60 38 100 38 Z"/><ellipse cx="78" cy="100" rx="10" ry="14" fill="#1e293b"/><ellipse cx="122" cy="100" rx="10" ry="14" fill="#1e293b"/><circle cx="82" cy="94" r="4" fill="#fff"/><circle cx="126" cy="94" r="4" fill="#fff"/><ellipse cx="60" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><ellipse cx="140" cy="118" rx="9" ry="5" fill="#fb7185" opacity=".5"/><path d="M92 120 Q100 128 108 120" stroke="#1e293b" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>
+          <div class="name">Beep</div><div class="desc">strict trainer</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⏰ Work hours <span class="hint">reminders stay quiet outside these</span></h2>
+      <div class="row"><label>Start</label><input type="time" id="workStart" /></div>
+      <div class="row"><label>End</label><input type="time" id="workEnd" /></div>
+      <div class="row"><label>Start with Windows</label><input type="checkbox" id="autoLaunch" /></div>
+    </div>
+
+    <div class="card">
+      <h2>💧 Water</h2>
+      <div class="row"><label>Enabled</label><input type="checkbox" id="waterEnabled" /></div>
+      <div class="row"><label>Remind every (minutes)</label><input type="number" id="waterInterval" min="10" max="240" /></div>
+    </div>
+
+    <div class="card">
+      <h2>🍱 Lunch</h2>
+      <div class="row"><label>Enabled</label><input type="checkbox" id="lunchEnabled" /></div>
+      <div class="row"><label>Lunch time</label><input type="time" id="lunchTime" /></div>
+    </div>
+
+    <div class="card">
+      <h2>🏃 Long sitting</h2>
+      <div class="row"><label>Enabled</label><input type="checkbox" id="sitEnabled" /></div>
+      <div class="row"><label>Remind after sitting (minutes)</label><input type="number" id="sitThreshold" min="20" max="180" /></div>
+      <div class="row"><label>Suggested break (minutes)</label><input type="number" id="sitBreak" min="1" max="30" /></div>
+    </div>
+
+    <div class="card">
+      <h2>💊 Medicines</h2>
+      <div id="medList"></div>
+      <div class="add-med">
+        <input type="text" id="medName" placeholder="Medicine name" />
+        <input type="time" id="medTime" />
+        <button class="small" id="addMedBtn">Add</button>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: 1 / -1;">
+      <h2>🧪 Meet your buddy <span class="hint">click one — it appears on your screen right now</span></h2>
+      <div class="tests">
+        <button data-test="water"><span>💧</span>Water break</button>
+        <button data-test="lunch"><span>🍱</span>Lunch time</button>
+        <button data-test="sit"><span>🏃</span>Exercise</button>
+        <button data-test="medicine"><span>💊</span>Medicine</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="savebar">
+    <button id="saveBtn">Save settings</button>
+    <span class="saved" id="savedMsg">Saved ✓</span>
+  </div>
+
+  <!-- first-run onboarding -->
+  <div class="overlay hidden" id="onboarding">
+    <div class="modal">
+      <div class="big">💊</div>
+      <h2>Do you take any medicines?</h2>
+      <p>Your companion can remind you at the exact times — everything stays on this computer, nothing is sent anywhere.</p>
+      <div class="choices">
+        <button id="obYes">Yes, let me add them</button>
+        <button class="ghost" id="obNo">No, skip</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

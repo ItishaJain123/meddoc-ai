@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Companion</title>
+  <link rel="stylesheet" href="companion.css" />
+</head>
+<body>
+  <div class="stage" id="stage">
+    <!-- speech bubble -->
+    <div class="bubble" id="bubble">
+      <div class="bubble-emoji" id="bubbleEmoji">💧</div>
+      <div class="bubble-text">
+        <div class="title" id="title"></div>
+        <div class="body" id="body"></div>
+      </div>
+      <div class="actions">
+        <button class="done" id="doneBtn">Done ✓</button>
+        <button class="snooze" id="snoozeBtn">Snooze</button>
+      </div>
+    </div>
+
+    <!-- the buddy -->
+    <div class="scene" id="scene">
+      <div class="hearts" id="hearts"></div>
+      <svg id="buddy" class="buddy char-blob" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="bodyGrad" cx="38%" cy="28%" r="80%">
+            <stop offset="0%"  stop-color="var(--body-light)" />
+            <stop offset="70%" stop-color="var(--body)" />
+            <stop offset="100%" stop-color="var(--body-dark)" />
+          </radialGradient>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1e3a8a" flood-opacity="0.25"/>
+          </filter>
+        </defs>
+
+        <!-- floor shadow -->
+        <ellipse id="shadow" cx="100" cy="181" rx="44" ry="8" fill="#1e3a8a" opacity="0.20" />
+
+        <!-- whole body rig -->
+        <g id="rig">
+          <!-- feet: tiny paws peeking out -->
+          <ellipse class="foot foot-l" cx="80"  cy="168" rx="15" ry="9" fill="var(--body-dark)"/>
+          <ellipse class="foot foot-r" cx="120" cy="168" rx="15" ry="9" fill="var(--body-dark)"/>
+
+          <!-- left arm: soft nub -->
+          <g class="arm arm-l">
+            <ellipse cx="42" cy="122" rx="13" ry="19" fill="var(--body-dark)" transform="rotate(24 42 122)"/>
+          </g>
+
+          <!-- right arm + props it can hold -->
+          <g class="arm arm-r">
+            <ellipse cx="158" cy="122" rx="13" ry="19" fill="var(--body-dark)" transform="rotate(-24 158 122)"/>
+            <g class="prop prop-cup">
+              <!-- tumbler: outline, water inside (drains as it drinks), straw -->
+              <rect x="149" y="96" width="22" height="30" rx="5" fill="#bfdbfe" opacity="0.55"/>
+              <rect class="water-fill" x="152" y="101" width="16" height="22" rx="3.5" fill="#38bdf8"/>
+              <rect x="149" y="96" width="22" height="30" rx="5" fill="none" stroke="#60a5fa" stroke-width="2.4"/>
+              <rect x="164" y="82" width="3.6" height="18" rx="1.8" fill="#fb7185" transform="rotate(16 166 91)"/>
+            </g>
+            <g class="prop prop-bowl">
+              <ellipse cx="160" cy="110" rx="18" ry="7.5" fill="#fde68a"/>
+              <path d="M142 109a18 10 0 0 0 36 0z" fill="#f59e0b"/>
+              <circle cx="154" cy="106" r="3" fill="#fff7ed"/><circle cx="165" cy="107" r="3" fill="#fff7ed"/>
+              <path class="steam s1" d="M152 96 q3 -6 0 -11" stroke="#e2e8f0" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+              <path class="steam s2" d="M164 94 q3 -6 0 -11" stroke="#e2e8f0" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            </g>
+            <g class="prop prop-bell">
+              <rect x="144" y="106" width="32" height="7" rx="3.5" fill="#64748b"/>
+              <rect x="140" y="99" width="9" height="21" rx="4" fill="#334155"/>
+              <rect x="171" y="99" width="9" height="21" rx="4" fill="#334155"/>
+            </g>
+            <g class="prop prop-pill">
+              <g transform="rotate(-24 160 108)">
+                <rect x="150" y="102" width="21" height="12" rx="6" fill="#fff"/>
+                <path d="M160.5 102h4.5a6 6 0 0 1 6 6 6 6 0 0 1-6 6h-4.5z" fill="#fb7185"/>
+              </g>
+            </g>
+          </g>
+
+          <!-- body -->
+          <g id="torso">
+            <path id="bodyShape" filter="url(#soft)" fill="url(#bodyGrad)"
+              d="M100 38 C140 38 162 70 162 108 C162 146 136 168 100 168 C64 168 38 146 38 108 C38 70 60 38 100 38 Z"/>
+            <!-- soft belly glow -->
+            <ellipse cx="100" cy="132" rx="34" ry="24" fill="var(--belly)" opacity="0.5"/>
+            <!-- top shine -->
+            <ellipse cx="78" cy="62" rx="18" ry="9" fill="#ffffff" opacity="0.35" transform="rotate(-18 78 62)"/>
+
+            <!-- character accessories -->
+            <g class="acc acc-cat">
+              <path d="M60 58 C54 34 62 26 70 30 C78 34 84 44 82 52 Z" fill="var(--body)"/>
+              <path d="M140 58 C146 34 138 26 130 30 C122 34 116 44 118 52 Z" fill="var(--body)"/>
+              <path d="M64 52 C61 39 65 34 70 37 C74 40 77 46 76 50 Z" fill="#fda4af"/>
+              <path d="M136 52 C139 39 135 34 130 37 C126 40 123 46 124 50 Z" fill="#fda4af"/>
+            </g>
+            <g class="acc acc-robot">
+              <rect x="97" y="24" width="6" height="18" rx="3" fill="var(--body-dark)"/>
+              <circle class="antenna-tip" cx="100" cy="21" r="6.5" fill="#fbbf24"/>
+              <rect x="70" y="52" width="60" height="5" rx="2.5" fill="#ffffff" opacity="0.25"/>
+            </g>
+
+            <!-- face -->
+            <g id="face">
+              <!-- big kawaii eyes -->
+              <g class="eye eye-l">
+                <ellipse cx="78" cy="100" rx="10.5" ry="14" fill="#1e293b"/>
+                <circle cx="82" cy="94" r="4" fill="#fff"/>
+                <circle cx="74.5" cy="105" r="2" fill="#fff" opacity="0.85"/>
+              </g>
+              <g class="eye eye-r">
+                <ellipse cx="122" cy="100" rx="10.5" ry="14" fill="#1e293b"/>
+                <circle cx="126" cy="94" r="4" fill="#fff"/>
+                <circle cx="118.5" cy="105" r="2" fill="#fff" opacity="0.85"/>
+              </g>
+              <!-- blush -->
+              <ellipse class="cheek" cx="60" cy="116" rx="9" ry="5.5" fill="#fb7185" opacity="0.5"/>
+              <ellipse class="cheek" cx="140" cy="116" rx="9" ry="5.5" fill="#fb7185" opacity="0.5"/>
+              <!-- tiny smile -->
+              <path id="mouth" d="M92 118 Q100 126 108 118" stroke="#1e293b" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- sparkles for exercise -->
+        <g class="fx">
+          <circle class="sp sp1" cx="48" cy="70" r="3" fill="#60a5fa"/>
+          <circle class="sp sp2" cx="156" cy="58" r="2.5" fill="#34d399"/>
+          <circle class="sp sp3" cx="170" cy="130" r="3" fill="#fbbf24"/>
+        </g>
+        <!-- water droplets while sipping -->
+        <g class="drops">
+          <circle class="drop d1" cx="112" cy="118" r="3" fill="#38bdf8"/>
+          <circle class="drop d2" cx="120" cy="114" r="2.4" fill="#7dd3fc"/>
+        </g>
+        <!-- morsel of food that travels bowl → mouth -->
+        <circle class="food-bit" cx="118" cy="128" r="5.5" fill="#f59e0b"/>
+      </svg>
+    </div>
+  </div>
+  <script src="companion.js"></script>
+</body>
+</html>

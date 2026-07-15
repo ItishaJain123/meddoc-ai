@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingModal, { useOnboarding } from '../components/Onboarding/OnboardingModal';
+import CompanionBanner from '../components/CompanionBanner/CompanionBanner';
 import LazyMount from '../components/LazyMount/LazyMount';
 import { generateHealthReportPDF } from '../utils/generatePDF';
 import {
@@ -785,6 +786,8 @@ function Dashboard() {
   return (
     <div className={styles.page}>
       {showOnboarding && <OnboardingModal onDismiss={dismissOnboarding} />}
+
+      <CompanionBanner />
 
       {/* ── Hero ── */}
       <div className={styles.hero}>

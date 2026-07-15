@@ -1,0 +1,51 @@
+{
+  "name": "meddoc-companion",
+  "version": "0.1.0",
+  "description": "MedDoc Companion — a desktop wellness buddy that reminds you to drink water, eat lunch, take medicines, and move during long sitting.",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
+  },
+  "author": "MedDoc AI",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  },
+  "build": {
+    "appId": "ai.meddoc.companion",
+    "productName": "MedDoc Companion",
+    "files": [
+      "main/**/*",
+      "preload/**/*",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [],
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MedDoc Companion"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.healthcare-fitness"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility"
+    }
+  }
+}
