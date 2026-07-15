@@ -3,8 +3,126 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { useMetrics } from '../hooks/useMetrics';
+import { AlertTriangle, Plus, X, Loader2 } from 'lucide-react';
 import styles from './HealthTrendsPage.module.css';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+// Common vitals with sensible units + adult reference ranges (editable in the form)
+const VITAL_PRESETS = [
+  { name: 'Weight',            unit: 'kg',    low: '',   high: '' },
+  { name: 'Systolic BP',       unit: 'mmHg',  low: 90,   high: 120 },
+  { name: 'Diastolic BP',      unit: 'mmHg',  low: 60,   high: 80 },
+  { name: 'Fasting Glucose',   unit: 'mg/dL', low: 70,   high: 100 },
+  { name: 'Heart Rate',        unit: 'bpm',   low: 60,   high: 100 },
+  { name: 'SpO2',              unit: '%',     low: 95,   high: 100 },
+];
+
+function AddVitalModal({ onClose, onSaved }) {
+  const { getToken } = useAuth();
+  const [form, setForm] = useState({
+    metricName: 'Weight', unit: 'kg', value: '', refRangeLow: '', refRangeHigh: '',
+    reportDate: new Date().toISOString().slice(0, 10),
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  function applyPreset(name) {
+    const p = VITAL_PRESETS.find((v) => v.name === name);
+    setForm((f) => ({
+      ...f,
+      metricName: name,
+      unit: p?.unit ?? f.unit,
+      refRangeLow: p?.low ?? '',
+      refRangeHigh: p?.high ?? '',
+    }));
+  }
+
+  async function save(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_URL}/metrics/manual`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Could not save the vital');
+      }
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <form className={styles.modal} onClick={(e) => e.stopPropagation()} onSubmit={save}>
+        <div className={styles.modalHead}>
+          <h3>Add a vital</h3>
+          <button type="button" className={styles.modalClose} onClick={onClose}><X size={15} /></button>
+        </div>
+
+        <div className={styles.presetRow}>
+          {VITAL_PRESETS.map((p) => (
+            <button
+              type="button"
+              key={p.name}
+              className={`${styles.presetChip} ${form.metricName === p.name ? styles.presetActive : ''}`}
+              onClick={() => applyPreset(p.name)}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.formGrid}>
+          <label className={styles.field}>
+            <span>Metric name</span>
+            <input required value={form.metricName} onChange={(e) => setForm({ ...form, metricName: e.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>Value</span>
+            <input required type="number" step="any" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>Unit</span>
+            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>Date</span>
+            <input type="date" value={form.reportDate} onChange={(e) => setForm({ ...form, reportDate: e.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>Normal from (optional)</span>
+            <input type="number" step="any" value={form.refRangeLow} onChange={(e) => setForm({ ...form, refRangeLow: e.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>Normal to (optional)</span>
+            <input type="number" step="any" value={form.refRangeHigh} onChange={(e) => setForm({ ...form, refRangeHigh: e.target.value })} />
+          </label>
+        </div>
+
+        {error && <p className={styles.modalError}>{error}</p>}
+
+        <button className={styles.modalSave} disabled={saving}>
+          {saving ? <Loader2 size={14} className={styles.spin} /> : <Plus size={14} />}
+          {saving ? 'Saving…' : 'Save vital'}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 // ── Theme-aware chart colors ──────────────────────────────────────────────────
 function useChartTheme() {
@@ -96,8 +214,10 @@ function MetricCard({ name, data }) {
   const trendDir  = change === null ? null : parseFloat(change) > 0.05 ? 'up' : parseFloat(change) < -0.05 ? 'down' : 'stable';
   const meaning   = trendMeaning(latest, prev, refLow, refHigh);
 
-  const hasCritical = data.some((d) => d.isCritical);
-  const hasAbnormal = !hasCritical && data.some((d) => d.isAbnormal);
+  // Status reflects the current (latest) reading, not any historical one, so a metric
+  // that has since returned to normal is no longer flagged abnormal.
+  const hasCritical = latest.isCritical;
+  const hasAbnormal = !hasCritical && latest.isAbnormal;
   const status      = hasCritical ? 'critical' : hasAbnormal ? 'abnormal' : 'normal';
   const lineColor   = hasCritical ? theme.critical : hasAbnormal ? theme.abnormal : theme.normal;
 
@@ -174,6 +294,11 @@ function MetricCard({ name, data }) {
               />
             </LineChart>
           </ResponsiveContainer>
+          {data.length === 2 && (
+            <p className={styles.sparseHint}>
+              Based on 2 readings — the trend gets more reliable with each new report
+            </p>
+          )}
         </div>
       ) : (
         <div className={styles.singlePoint}>
@@ -194,24 +319,50 @@ function MetricCard({ name, data }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 function HealthTrendsPage() {
-  const { metrics, criticalAlerts, loading, error } = useMetrics();
-  const [search, setSearch] = useState('');
+  const { metrics, criticalAlerts, loading, error, reload } = useMetrics();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get('metric') ?? '');
   const [filter, setFilter] = useState('all');
+  const [showAddVital, setShowAddVital] = useState(false);
 
+  // Support deep links from dashboard charts: /trends?metric=Haemoglobin
+  useEffect(() => {
+    const metricParam = searchParams.get('metric');
+    if (metricParam) setSearch(metricParam);
+  }, [searchParams]);
+
+  // A metric's status is its *latest* reading — a value that was out of range in an
+  // older report but normal now should not be counted as abnormal. Readings arrive
+  // sorted reportDate-ascending, so the last element is the most recent.
+  const latestOf = (n) => metrics[n][metrics[n].length - 1];
   const allNames      = Object.keys(metrics);
-  const totalCritical = allNames.filter((n) => metrics[n].some((d) => d.isCritical)).length;
-  const totalAbnormal = allNames.filter((n) => !metrics[n].some((d) => d.isCritical) && metrics[n].some((d) => d.isAbnormal)).length;
+  const totalCritical = allNames.filter((n) => latestOf(n).isCritical).length;
+  const totalAbnormal = allNames.filter((n) => latestOf(n).isAbnormal && !latestOf(n).isCritical).length;
 
   const filteredNames = allNames
     .filter((n) => n.toLowerCase().includes(search.toLowerCase()))
     .filter((n) => {
-      const d = metrics[n];
-      if (filter === 'critical') return d.some((x) => x.isCritical);
-      if (filter === 'abnormal') return d.some((x) => x.isAbnormal || x.isCritical);
+      const latest = latestOf(n);
+      if (filter === 'critical') return latest.isCritical;
+      if (filter === 'abnormal') return latest.isAbnormal || latest.isCritical;
       return true;
     });
 
-  if (loading) return <div className={styles.center}>Loading health data...</div>;
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}>Health Trends</h1>
+            <p className={styles.subtitle}>Track your lab values across all uploaded reports over time.</p>
+          </div>
+        </div>
+        <div className={styles.skeletonGrid}>
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className={styles.skeletonCard} />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -221,12 +372,19 @@ function HealthTrendsPage() {
           <h1 className={styles.title}>Health Trends</h1>
           <p className={styles.subtitle}>Track your lab values across all uploaded reports over time.</p>
         </div>
+        <button className={styles.addVitalBtn} onClick={() => setShowAddVital(true)}>
+          <Plus size={15} /> Add vital
+        </button>
       </div>
+
+      {showAddVital && (
+        <AddVitalModal onClose={() => setShowAddVital(false)} onSaved={reload} />
+      )}
 
       {/* ── Critical banner ── */}
       {criticalAlerts.length > 0 && (
         <div className={styles.criticalBanner}>
-          <span className={styles.bannerIcon}>🚨</span>
+          <span className={styles.bannerIcon}><AlertTriangle size={20} /></span>
           <div>
             <strong className={styles.bannerTitle}>Critical Values Detected</strong>
             <ul className={styles.alertList}>

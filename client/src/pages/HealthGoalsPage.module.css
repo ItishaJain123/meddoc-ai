@@ -383,3 +383,66 @@
   .formActions  { flex-direction: column-reverse; }
   .cancelBtn, .saveBtn { width: 100%; text-align: center; }
 }
+
+/* ── Suggested goals (one-click, from abnormal values) ──────── */
+.suggestBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.1rem;
+}
+
+.suggestLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.suggestChips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.suggestChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font);
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.13s, transform 0.12s, box-shadow 0.15s;
+}
+.suggestChip:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.suggestChip:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Form helper: latest reading + safe range ───────────────── */
+.metricHint {
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+/* ── Goal card footer: freshness of the data ────────────────── */
+.cardFoot {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}

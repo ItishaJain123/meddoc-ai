@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { askQuestion, fetchConversation, deleteConversation } from '../services/chatService';
+import { askQuestionStream, fetchConversation, deleteConversation } from '../services/chatService';
 
 export function useChat() {
   const { getToken } = useAuth();
@@ -11,31 +11,55 @@ export function useChat() {
 
   const sendMessage = useCallback(
     async (question) => {
-      // Optimistically add user message
+      // Optimistically add user message with a stable id we can remove later
+      const userMsgId = `user-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), role: 'USER', content: question },
+        { id: userMsgId, role: 'USER', content: question },
       ]);
       setLoading(true);
       setError(null);
 
-      try {
-        const result = await askQuestion(question, conversationId, getToken);
+      const streamId = `stream-${Date.now()}`;
+      let gotFirstToken = false;
 
-        setConversationId(result.conversationId);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: result.message.id,
-            role: 'ASSISTANT',
-            content: result.message.content,
-            sources: result.sources,
+      try {
+        await askQuestionStream(question, conversationId, getToken, {
+          onMeta: ({ conversationId: id }) => setConversationId(id),
+          onToken: (text) => {
+            if (!gotFirstToken) {
+              gotFirstToken = true;
+              setMessages((prev) => [
+                ...prev,
+                { id: streamId, role: 'ASSISTANT', content: text, streaming: true },
+              ]);
+            } else {
+              setMessages((prev) =>
+                prev.map((m) => (m.id === streamId ? { ...m, content: m.content + text } : m))
+              );
+            }
           },
-        ]);
+          onDone: ({ conversationId: id, message, sources }) => {
+            setConversationId(id);
+            setMessages((prev) => {
+              const final = {
+                id: message.id,
+                role: 'ASSISTANT',
+                content: message.content,
+                sources,
+              };
+              return gotFirstToken
+                ? prev.map((m) => (m.id === streamId ? final : m))
+                : [...prev, final];
+            });
+          },
+        });
       } catch (err) {
         setError(err.message);
-        // Remove the optimistic user message on failure
-        setMessages((prev) => prev.slice(0, -1));
+        // Remove exactly the two messages we added (the optimistic user message
+        // and any partial streamed answer) — never a positional slice, which
+        // could delete an unrelated message.
+        setMessages((prev) => prev.filter((m) => m.id !== streamId && m.id !== userMsgId));
       } finally {
         setLoading(false);
       }

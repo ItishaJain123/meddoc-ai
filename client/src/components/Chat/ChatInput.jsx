@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Mic, Square, Send } from 'lucide-react';
 import styles from './ChatInput.module.css';
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -72,7 +73,7 @@ function ChatInput({ onSend, disabled }) {
         disabled={disabled}
         title={listening ? 'Stop listening' : 'Speak your question'}
       >
-        {listening ? '⏹' : '🎤'}
+        {listening ? <Square size={16} /> : <Mic size={16} />}
       </button>
       <textarea
         ref={textareaRef}
@@ -80,7 +81,7 @@ function ChatInput({ onSend, disabled }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={listening ? 'Listening...' : 'Ask a question — or click 🎤 to speak...'}
+        placeholder={listening ? 'Listening...' : 'Ask a question, or use the mic to speak...'}
         disabled={disabled}
         rows={1}
       />
@@ -90,7 +91,7 @@ function ChatInput({ onSend, disabled }) {
         disabled={disabled || !value.trim()}
         title="Send (Enter)"
       >
-        {disabled ? <span className={styles.spinner} /> : '➤'}
+        {disabled ? <span className={styles.spinner} /> : <Send size={16} />}
       </button>
     </form>
   );

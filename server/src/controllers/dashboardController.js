@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { matchReadings, computeGoalProgress } = require('../utils/goalProgress');
 
 function normalizeScore(value, low, high) {
   if (low == null || high == null || isNaN(value)) return null;
@@ -18,9 +19,6 @@ async function getDashboard(req, res) {
 
   const [
     totalDocuments,
-    totalMetrics,
-    abnormalCount,
-    criticalCount,
     conversationCount,
     allMetrics,
     recentDocuments,
@@ -30,9 +28,6 @@ async function getDashboard(req, res) {
     activeGoals,
   ] = await Promise.all([
     prisma.document.count({ where: { userId, status: 'READY' } }),
-    prisma.healthMetric.count({ where: { userId } }),
-    prisma.healthMetric.count({ where: { userId, isAbnormal: true, isCritical: false } }),
-    prisma.healthMetric.count({ where: { userId, isCritical: true } }),
     prisma.conversation.count({ where: { userId } }),
     prisma.healthMetric.findMany({
       where: { userId },
@@ -75,8 +70,28 @@ async function getDashboard(req, res) {
     }),
   ]);
 
+  // ── Current status = latest reading per metric ──────────────────────────────
+  // Every headline number (metrics tracked, needs-attention, health score, donut,
+  // abnormal-values list) is derived from this one map, so the dashboard can never
+  // contradict itself. "Metrics tracked" counts distinct metrics (matching the
+  // Trends page), and a value is only "abnormal" if its *latest* reading is out of
+  // range — a value that was high last year but normal now no longer counts.
+  const latestPerMetric = {};
+  for (const m of allMetrics) {
+    const existing = latestPerMetric[m.metricName];
+    if (!existing || new Date(m.reportDate) > new Date(existing.reportDate)) {
+      latestPerMetric[m.metricName] = m;
+    }
+  }
+  const latestReadings = Object.values(latestPerMetric);
+
+  const totalMetrics        = latestReadings.length;
+  const outOfRange          = latestReadings.filter((m) => m.isAbnormal || m.isCritical);
+  const totalAbnormal       = outOfRange.length;
+  const criticalCount       = outOfRange.filter((m) => m.isCritical).length;
+  const abnormalNonCritical = totalAbnormal - criticalCount;
+
   // ── Health score ──────────────────────────────────────────────────────────
-  const totalAbnormal = abnormalCount + criticalCount;
   const healthScore = totalMetrics > 0
     ? Math.round(((totalMetrics - totalAbnormal) / totalMetrics) * 100)
     : null;
@@ -84,9 +99,9 @@ async function getDashboard(req, res) {
   // ── Donut breakdown ───────────────────────────────────────────────────────
   const normalCount = totalMetrics - totalAbnormal;
   const metricsBreakdown = [
-    { name: 'Normal',   value: normalCount,   color: '#059669' },
-    { name: 'Abnormal', value: abnormalCount,  color: '#d97706' },
-    { name: 'Critical', value: criticalCount,  color: '#dc2626' },
+    { name: 'Normal',   value: normalCount,         color: '#059669' },
+    { name: 'Abnormal', value: abnormalNonCritical, color: '#d97706' },
+    { name: 'Critical', value: criticalCount,       color: '#dc2626' },
   ].filter((d) => d.value > 0);
 
   // ── Trends (grouped by metric name) ──────────────────────────────────────
@@ -137,17 +152,12 @@ async function getDashboard(req, res) {
   const uploadActivity = months.map(({ month, count }) => ({ month, count }));
 
   // ── Radar data (latest value per metric, normalised 0-100) ────────────────
-  const latestPerMetric = {};
-  for (const m of allMetrics) {
-    const existing = latestPerMetric[m.metricName];
-    if (!existing || new Date(m.reportDate) > new Date(existing.reportDate)) {
-      latestPerMetric[m.metricName] = m;
-    }
-  }
-  const radarData = Object.values(latestPerMetric)
+  const radarData = latestReadings
     .filter((m) => m.refRangeLow != null && m.refRangeHigh != null)
     .map((m) => ({
-      metric: m.metricName.length > 12 ? m.metricName.slice(0, 11) + '…' : m.metricName,
+      // Full name — the client chart reserves enough axis width, and the
+      // click-through to /trends?metric=<name> needs the exact metric name
+      metric: m.metricName,
       score:  normalizeScore(m.value, m.refRangeLow, m.refRangeHigh),
     }))
     .filter((r) => r.score != null)
@@ -168,32 +178,22 @@ async function getDashboard(req, res) {
     .sort((a, b) => (b.isCritical ? 1 : 0) - (a.isCritical ? 1 : 0));
 
   // ── Goals with live progress ──────────────────────────────────────────────
-  const latestValues = Object.values(latestPerMetric);
+  // allMetrics is sorted reportDate-ascending, so per goal the first matching
+  // reading is the baseline and the last is the latest
   const goalsWithProgress = activeGoals.map((goal) => {
-    const goalName = goal.metricName.toLowerCase().trim();
-    const match = latestValues.find((m) => {
-      const s = m.metricName.toLowerCase().trim();
-      return s === goalName || s.includes(goalName) || goalName.includes(s);
-    });
-    const currentValue = match?.value ?? null;
-    let achieved = null;
-    let progress = 0;
-    if (currentValue !== null) {
-      achieved = goal.direction === 'above'
-        ? currentValue >= goal.targetValue
-        : currentValue <= goal.targetValue;
-      progress = goal.direction === 'above'
-        ? Math.min(100, Math.round((currentValue / goal.targetValue) * 100))
-        : currentValue > 0
-          ? Math.min(100, Math.round((goal.targetValue / currentValue) * 100))
-          : 0;
-    }
+    const readings = matchReadings(allMetrics, goal.metricName);
+    const latest = readings[readings.length - 1] ?? null;
+    const baseline = readings[0] ?? null;
+    const currentValue = latest?.value ?? null;
+    const { achieved, progress } = computeGoalProgress(
+      goal.direction, goal.targetValue, currentValue, baseline?.value ?? null,
+    );
     return {
       id:           goal.id,
       metricName:   goal.metricName,
       targetValue:  goal.targetValue,
       direction:    goal.direction,
-      unit:         match?.unit ?? goal.unit ?? '',
+      unit:         latest?.unit ?? goal.unit ?? '',
       currentValue,
       progress,
       achieved,

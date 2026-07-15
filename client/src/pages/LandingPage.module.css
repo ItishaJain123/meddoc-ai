@@ -1,0 +1,243 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem;
+}
+
+.logo { display: flex; align-items: center; gap: 0.55rem; }
+.logoText { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+.logoText em { font-style: normal; color: var(--primary); }
+
+.navActions { display: flex; align-items: center; gap: 0.6rem; }
+
+.navGhost {
+  font-size: 0.86rem; font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-md);
+  transition: color 0.15s, background 0.15s;
+}
+.navGhost:hover { color: var(--text-primary); background: var(--surface); }
+
+.navPrimary {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.86rem; font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  padding: 0.5rem 1.05rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  transition: background 0.15s, transform 0.12s;
+}
+.navPrimary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 4.5rem 1.5rem 3.5rem;
+  text-align: center;
+}
+
+.kicker {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.heroTitle {
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.heroAccent { color: var(--primary); }
+
+.heroSub {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-width: 620px;
+  margin: 1.25rem auto 0;
+}
+
+.heroCtas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.ctaPrimary {
+  font-size: 0.95rem; font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  padding: 0.75rem 1.6rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s, transform 0.12s;
+}
+.ctaPrimary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+.ctaGhost {
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.6rem;
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s, transform 0.12s;
+}
+.ctaGhost:hover { border-color: var(--primary); transform: translateY(-1px); }
+
+.heroNote { margin-top: 1.1rem; font-size: 0.78rem; color: var(--text-muted); }
+
+/* ── Steps ───────────────────────────────────────────────────── */
+.steps {
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem 3.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.step {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem 1.4rem 1.3rem;
+}
+
+.stepNum {
+  position: absolute;
+  top: 1.15rem; right: 1.25rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--border);
+  line-height: 1;
+}
+
+.stepIcon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.stepTitle { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+.stepText  { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55; }
+
+/* ── Features ────────────────────────────────────────────────── */
+.features {
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem 3.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.featureCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.15s;
+}
+.featureCard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  box-shadow: var(--shadow-md);
+}
+
+.featureIcon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.featureTitle { font-size: 0.93rem; font-weight: 700; margin-bottom: 0.3rem; }
+.featureText  { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.55; }
+
+/* ── Security strip ──────────────────────────────────────────── */
+.security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.25rem;
+  flex-wrap: wrap;
+  padding: 1.4rem 1.5rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.securityItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.securityItem svg { color: var(--primary); }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.footer {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 2.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.footerMuted { margin-top: 0.75rem; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .steps, .featureGrid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .steps, .featureGrid { grid-template-columns: 1fr; }
+  .hero { padding-top: 3rem; }
+}

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const prisma = require('../config/db');
-const { processDocument, deleteDocument } = require('../services/documentService');
+const { processDocument, deleteDocument, confirmDocumentIdentity } = require('../services/documentService');
 
 // POST /api/documents/upload
 async function uploadDocument(req, res) {
@@ -58,6 +58,8 @@ async function listDocuments(req, res) {
       status: true,
       pageCount: true,
       extractedText: true,
+      extractedPatientName: true,
+      identityMismatch: true,
       createdAt: true,
     },
   });
@@ -77,7 +79,7 @@ async function listDocuments(req, res) {
 async function getDocumentStatus(req, res) {
   const doc = await prisma.document.findFirst({
     where: { id: req.params.id, userId: req.user.id },
-    select: { id: true, status: true, extractedText: true },
+    select: { id: true, status: true, extractedText: true, extractedPatientName: true, identityMismatch: true },
   });
 
   if (!doc) return res.status(404).json({ error: 'Document not found' });
@@ -91,6 +93,26 @@ async function getDocumentStatus(req, res) {
     processingError: extractedText?.startsWith('ERROR:')
       ? extractedText.replace('ERROR:', '').trim()
       : null,
+  });
+}
+
+// GET /api/documents/:id/content — extracted text for the in-app viewer
+async function getDocumentContent(req, res) {
+  const doc = await prisma.document.findFirst({
+    where: { id: req.params.id, userId: req.user.id },
+    select: { id: true, fileName: true, status: true, extractedText: true, createdAt: true },
+  });
+
+  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  if (doc.status !== 'READY' || !doc.extractedText || doc.extractedText.startsWith('NOT_MEDICAL:') || doc.extractedText.startsWith('ERROR:')) {
+    return res.status(400).json({ error: 'Document content is not available' });
+  }
+
+  res.json({
+    id: doc.id,
+    fileName: doc.fileName,
+    createdAt: doc.createdAt,
+    text: doc.extractedText,
   });
 }
 
@@ -157,4 +179,21 @@ async function retryDocument(req, res) {
   res.json({ message: 'Document queued for reprocessing' });
 }
 
-module.exports = { uploadDocument, listDocuments, getDocumentStatus, removeDocument, reextractDocument, retryDocument };
+// POST /api/documents/:id/confirm-identity — user asserts a held report is theirs
+async function confirmIdentity(req, res) {
+  try {
+    await confirmDocumentIdentity(req.params.id, req.user.id);
+    res.json({ message: 'Report confirmed and queued for processing' });
+  } catch (err) {
+    if (err.message === 'Document not found') {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err.message === 'Document is not held for identity confirmation' ||
+        err.message === 'No extracted text available to finalize') {
+      return res.status(400).json({ error: err.message });
+    }
+    throw err;
+  }
+}
+
+module.exports = { uploadDocument, listDocuments, getDocumentStatus, getDocumentContent, removeDocument, reextractDocument, retryDocument, confirmIdentity };

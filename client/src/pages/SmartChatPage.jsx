@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useChat } from '../hooks/useChat';
+import { useMetrics } from '../hooks/useMetrics';
 import { fetchConversations } from '../services/chatService';
+import { fetchDocuments } from '../services/documentService';
 import MessageBubble from '../components/Chat/MessageBubble';
 import ChatInput from '../components/Chat/ChatInput';
+import DocumentViewerModal from '../components/Documents/DocumentViewerModal';
+import {
+  Droplet, ScanLine, Pill, AlertTriangle, BarChart3, HeartPulse,
+  MessageSquare, Activity,
+} from 'lucide-react';
 import styles from './SmartChatPage.module.css';
 
 const SUGGESTIONS = [
-  { icon: '🩸', text: 'What are my blood sugar levels?' },
-  { icon: '🫁', text: 'What does my X-ray show?' },
-  { icon: '💊', text: 'What medication was prescribed and what is it for?' },
-  { icon: '⚠️', text: 'Are any of my test results abnormal?' },
-  { icon: '📊', text: 'Give me a summary of my latest blood test' },
-  { icon: '🫀', text: 'What do my cholesterol levels mean?' },
+  { icon: Droplet,       text: 'What are my blood sugar levels?' },
+  { icon: ScanLine,      text: 'What does my X-ray show?' },
+  { icon: Pill,          text: 'What medication was prescribed and what is it for?' },
+  { icon: AlertTriangle, text: 'Are any of my test results abnormal?' },
+  { icon: BarChart3,     text: 'Give me a summary of my latest blood test' },
+  { icon: HeartPulse,    text: 'What do my cholesterol levels mean?' },
 ];
 
 function speak(text) {
@@ -35,15 +42,105 @@ function timeAgo(d) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// Compact one-line info chip — informative without shouting at the user
+function ConflictBanner({ conflicts, onDismiss, onExpand, expanded }) {
+  if (conflicts.length === 0) return null;
+  return (
+    <div className={styles.conflictBanner}>
+      <div className={styles.conflictBannerRow}>
+        <span className={styles.conflictIcon}><AlertTriangle size={13} /></span>
+        <span className={styles.conflictText}>
+          {conflicts.length} metric{conflicts.length > 1 ? 's have' : ' has'} different values across your
+          reports — answers cite which report they used.
+        </span>
+        <div className={styles.conflictActions}>
+          <button className={styles.conflictToggle} onClick={onExpand}>
+            {expanded ? 'Hide' : 'Details'}
+          </button>
+          <button className={styles.conflictClose} onClick={onDismiss} title="Dismiss">✕</button>
+        </div>
+      </div>
+      {expanded && (
+        <ul className={styles.conflictList}>
+          {conflicts.map(({ name, points }) => (
+            <li key={name} className={styles.conflictItem}>
+              <strong>{name}:</strong>{' '}
+              {points.map((p, i) => (
+                <span key={i}>
+                  {p.value} {p.unit || ''}
+                  <span className={styles.conflictDoc}> ({p.documentName || 'Unknown'})</span>
+                  {i < points.length - 1 ? ' vs ' : ''}
+                </span>
+              ))}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function SmartChatPage() {
   const { getToken } = useAuth();
   const { messages, loading, error, sendMessage, loadConversation, startNewChat, removeConversation } = useChat();
+  const { metrics } = useMetrics();
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [conflictDismissed, setConflictDismissed] = useState(false);
+  const [conflictExpanded, setConflictExpanded] = useState(false);
+  const [viewer, setViewer] = useState(null); // { documentId, fileName, highlight }
   const messagesEndRef = useRef(null);
   const prevMsgCount = useRef(0);
+  const docsCache = useRef(null);
+
+  // Open the document viewer from a citation chip. Resolves the file name to a
+  // documentId via message sources first, then via the documents list.
+  const handleCitation = useCallback(async (fileName, src) => {
+    if (src?.documentId) {
+      setViewer({ documentId: src.documentId, fileName: src.fileName, highlight: src.snippet });
+      return;
+    }
+    let match = null;
+    for (const msg of messages) {
+      match = msg.sources?.find((s) => s.fileName === fileName) || match;
+    }
+    if (!match) {
+      if (!docsCache.current) {
+        docsCache.current = await fetchDocuments(getToken).catch(() => []);
+      }
+      const doc = docsCache.current.find((d) => d.fileName === fileName);
+      if (doc) match = { documentId: doc.id, fileName: doc.fileName };
+    }
+    if (match) {
+      setViewer({ documentId: match.documentId, fileName: match.fileName, highlight: match.snippet });
+    }
+  }, [messages, getToken]);
+
+  const conflicts = useMemo(() => {
+    const result = [];
+    for (const [name, dataPoints] of Object.entries(metrics)) {
+      const byDoc = new Map();
+      for (const dp of dataPoints) {
+        if (!dp.documentId) continue;
+        const existing = byDoc.get(dp.documentId);
+        if (!existing || new Date(dp.reportDate) > new Date(existing.reportDate)) {
+          byDoc.set(dp.documentId, dp);
+        }
+      }
+      if (byDoc.size < 2) continue;
+      const points = Array.from(byDoc.values());
+      const values = points.map((p) => p.value);
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+      if (max > 0 && (max - min) / max > 0.1) {
+        points.sort((a, b) => new Date(b.reportDate) - new Date(a.reportDate));
+        result.push({ name, points });
+      }
+    }
+    return result;
+  }, [metrics]);
 
   useEffect(() => {
     if (!ttsEnabled) return;
@@ -94,8 +191,8 @@ function SmartChatPage() {
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHead}>
           <div className={styles.brand}>
-            <span className={styles.brandIcon}>🧬</span>
-            <span className={styles.brandName}>MedDoc AI</span>
+            <span className={styles.brandIcon}><Activity size={17} /></span>
+            <span className={styles.brandName}>Conversations</span>
           </div>
           <button className={styles.newChatBtn} onClick={handleNewChat}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -108,7 +205,7 @@ function SmartChatPage() {
         <div className={styles.convList}>
           {conversations.length === 0 ? (
             <div className={styles.noConvs}>
-              <span>💬</span>
+              <span><MessageSquare size={26} strokeWidth={1.5} /></span>
               <p>No conversations yet</p>
               <p>Start by asking a question</p>
             </div>
@@ -119,7 +216,7 @@ function SmartChatPage() {
                 className={`${styles.convItem} ${conv.id === activeId ? styles.activeConv : ''}`}
                 onClick={() => handleSelect(conv.id)}
               >
-                <div className={styles.convIcon}>💬</div>
+                <div className={styles.convIcon}><MessageSquare size={14} /></div>
                 <div className={styles.convBody}>
                   <div className={styles.convTitle}>{conv.title}</div>
                   <div className={styles.convMeta}>{timeAgo(conv.updatedAt)}</div>
@@ -179,6 +276,16 @@ function SmartChatPage() {
           </button>
         </div>
 
+        {/* Conflict banner */}
+        {!conflictDismissed && (
+          <ConflictBanner
+            conflicts={conflicts}
+            onDismiss={() => setConflictDismissed(true)}
+            onExpand={() => setConflictExpanded((v) => !v)}
+            expanded={conflictExpanded}
+          />
+        )}
+
         {/* Messages or empty state */}
         {messages.length === 0 ? (
           <div className={styles.empty}>
@@ -192,10 +299,10 @@ function SmartChatPage() {
             <h2 className={styles.emptyTitle}>Ask about your medical documents</h2>
             <p className={styles.emptySub}>Upload reports first, then ask anything about your health</p>
             <div className={styles.suggestions}>
-              {SUGGESTIONS.map((s) => (
-                <button key={s.text} className={styles.chip} onClick={() => handleSuggestion(s.text)}>
-                  <span className={styles.chipIcon}>{s.icon}</span>
-                  <span>{s.text}</span>
+              {SUGGESTIONS.map(({ icon: Icon, text }) => (
+                <button key={text} className={styles.chip} onClick={() => handleSuggestion(text)}>
+                  <span className={styles.chipIcon}><Icon size={15} strokeWidth={1.75} /></span>
+                  <span>{text}</span>
                 </button>
               ))}
             </div>
@@ -207,9 +314,10 @@ function SmartChatPage() {
                 key={msg.id}
                 message={msg}
                 onSpeak={msg.role === 'ASSISTANT' ? () => speak(msg.content) : null}
+                onCitation={handleCitation}
               />
             ))}
-            {loading && (
+            {loading && messages[messages.length - 1]?.role === 'USER' && (
               <div className={styles.thinking}>
                 <div className={styles.thinkingAvatar}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -228,6 +336,15 @@ function SmartChatPage() {
 
         <ChatInput onSend={sendMessage} disabled={loading} />
       </div>
+
+      {viewer && (
+        <DocumentViewerModal
+          documentId={viewer.documentId}
+          fileName={viewer.fileName}
+          highlight={viewer.highlight}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

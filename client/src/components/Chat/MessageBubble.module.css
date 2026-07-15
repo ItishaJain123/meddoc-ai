@@ -70,6 +70,28 @@
   word-break: break-word;
 }
 
+/* ── Light markdown inside assistant messages ────────────────── */
+.mdParagraph {
+  margin: 0 0 0.5em;
+}
+.content > .mdParagraph:last-child {
+  margin-bottom: 0;
+}
+.mdList {
+  margin: 0.25em 0 0.5em;
+  padding-left: 1.25em;
+  list-style: disc;
+}
+.content > .mdList:last-child {
+  margin-bottom: 0;
+}
+.mdList li {
+  margin: 0.15em 0;
+}
+.mdList li::marker {
+  color: var(--text-muted);
+}
+
 /* ── Footer (sources + speak) ────────────────────────────────── */
 .footer {
   display: flex;
@@ -97,19 +119,52 @@
 
 .sourceTag {
   font-size: 0.7rem;
-  background: color-mix(in srgb, var(--neon-blue) 8%, var(--surface));
-  color: var(--neon-blue);
-  border: 1px solid color-mix(in srgb, var(--neon-blue) 25%, transparent);
+  font-family: var(--font);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
   padding: 2px 9px;
   border-radius: 20px;
   max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
 }
-[data-theme="dark"] .sourceTag {
-  box-shadow: 0 0 6px color-mix(in srgb, var(--neon-blue) 20%, transparent);
+.sourceTag:hover {
+  background: color-mix(in srgb, var(--primary) 15%, var(--surface));
+  border-color: var(--primary);
 }
+
+/* Inline "(Source: file.pdf)" citation chip */
+.citation {
+  display: inline;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--primary);
+  border: none;
+  border-bottom: 1px dashed color-mix(in srgb, var(--primary) 50%, transparent);
+  border-radius: 4px 4px 0 0;
+  padding: 0 4px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.citation:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); }
+
+/* Streaming caret */
+.cursor {
+  display: inline-block;
+  width: 7px; height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--primary);
+  border-radius: 1px;
+  animation: blink 0.9s steps(2, start) infinite;
+}
+@keyframes blink { to { visibility: hidden; } }
 
 .speakBtn {
   background: none; border: none;

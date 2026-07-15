@@ -13,9 +13,16 @@ STRICT RULES:
 2. If the answer is not found in the context, say: "I couldn't find information about that in your uploaded documents."
 3. NEVER provide generic medical advice or information not from the documents.
 4. Use simple, plain language — avoid medical jargon. If you must use a medical term, explain it.
-5. Be empathetic and reassuring in tone.
-6. Always remind the patient to consult their doctor for medical decisions.
-7. When referencing specific values or findings, quote them directly from the documents.
+5. When referencing specific values or findings, quote them directly from the documents.
+6. CITATION REQUIRED: Every specific number, test result, or finding you mention MUST be followed by its source in parentheses. Format: (Source: filename). Example: "Your RBC is 5.0 g/dL (Source: blood_test_march.pdf)". Never state a medical value without citing which document it came from.
+7. CONFLICTING VALUES: If the same metric appears in multiple documents with different values, always state ALL values with their sources. Example: "Your RBC was 15.0 g/dL (Source: report_jan.pdf) and later 5.0 g/dL (Source: report_mar.pdf). The most recent value is 5.0 g/dL." Never silently pick one value when multiple exist.
+
+TONE — talk like a knowledgeable friend, not a lab machine:
+- Lead with the answer in one plain sentence, then give the details. Don't open with preamble like "Based on the context provided..." or "According to your documents...".
+- Be warm and human. Good news deserves a genuinely positive note ("Great news — your glucose is back in the normal range"). Concerning values deserve calm, steady framing — never alarming, never dismissive.
+- Keep answers SHORT. Two or three short paragraphs or a few bullets beat a wall of text. Stop when the question is answered.
+- Vary your phrasing between answers; never repeat the same stock sentences every time.
+- Suggest talking to their doctor ONLY when it genuinely matters: abnormal or critical values, medication questions, or decisions. Phrase it naturally ("worth mentioning to your doctor at your next visit") — do NOT tack a doctor disclaimer onto every single answer, and never use the same canned reminder twice in a conversation.
 
 HANDLING TYPOS AND ABBREVIATIONS (very important):
 - Patients are not medical professionals — they frequently make spelling mistakes and typos. Always infer intent from context.
@@ -59,6 +66,7 @@ const prompt = ChatPromptTemplate.fromMessages([
 const llm = new ChatGoogleGenerativeAI({
   apiKey: process.env.MEDDOC_GOOGLE_API_KEY,
   model: process.env.MEDDOC_GEMINI_MODEL,
+  apiVersion: 'v1beta',
   temperature: 0.3,
   maxOutputTokens: 1024,
 });
@@ -66,25 +74,13 @@ const llm = new ChatGoogleGenerativeAI({
 const outputParser = new StringOutputParser();
 
 /**
- * Run RAG chain: retrieve relevant chunks → generate answer
- * @param {string} userId
- * @param {string} question
- * @param {Array<{role: string, content: string}>} history - recent messages oldest-first
- * Returns { answer, sources }
+ * Retrieve relevant chunks and format the prompt inputs + deduped sources.
+ * Returns null when the user has no documents.
  */
-async function askQuestion(userId, question, history = []) {
-  // 1. Retrieve relevant chunks from vector store
+async function prepareRun(userId, question, history) {
   const relevantChunks = await similaritySearch(userId, question, 5);
+  if (relevantChunks.length === 0) return null;
 
-  if (relevantChunks.length === 0) {
-    return {
-      answer:
-        "I couldn't find any uploaded documents to answer your question. Please upload your medical reports first.",
-      sources: [],
-    };
-  }
-
-  // 2. Format context from retrieved chunks
   const context = relevantChunks
     .map(
       (chunk, i) =>
@@ -92,7 +88,6 @@ async function askQuestion(userId, question, history = []) {
     )
     .join("\n\n---\n\n");
 
-  // 3. Format conversation history
   const historyText =
     history.length === 0
       ? "No previous messages."
@@ -103,13 +98,8 @@ async function askQuestion(userId, question, history = []) {
           )
           .join("\n");
 
-  // 4. Build and run chain
-  const chain = prompt.pipe(llm).pipe(outputParser);
-  const answer = await retryWithBackoff(() =>
-    chain.invoke({ context, question, history: historyText }),
-  );
-
-  // 4. Deduplicate sources
+  // Deduplicate sources; keep the highest-ranked chunk text as a snippet so
+  // the client can highlight the cited passage in the document viewer.
   const sourceMap = new Map();
   for (const chunk of relevantChunks) {
     const id = chunk.metadata?.documentId;
@@ -118,14 +108,58 @@ async function askQuestion(userId, question, history = []) {
         documentId: id,
         fileName: chunk.metadata?.fileName || "Unknown",
         fileType: chunk.metadata?.fileType || "",
+        snippet: (chunk.content || "").slice(0, 300),
       });
     }
   }
 
-  return {
-    answer,
-    sources: Array.from(sourceMap.values()),
-  };
+  return { context, historyText, sources: Array.from(sourceMap.values()) };
 }
 
-module.exports = { askQuestion };
+const NO_DOCS_ANSWER =
+  "I couldn't find any uploaded documents to answer your question. Please upload your medical reports first.";
+
+/**
+ * Run RAG chain: retrieve relevant chunks → generate answer
+ * Returns { answer, sources }
+ */
+async function askQuestion(userId, question, history = []) {
+  const run = await prepareRun(userId, question, history);
+  if (!run) return { answer: NO_DOCS_ANSWER, sources: [] };
+
+  const chain = prompt.pipe(llm).pipe(outputParser);
+  const answer = await retryWithBackoff(() =>
+    chain.invoke({ context: run.context, question, history: run.historyText }),
+  );
+
+  return { answer, sources: run.sources };
+}
+
+/**
+ * Streaming variant: calls onToken(text) for each generated chunk.
+ * Returns the full { answer, sources } once the stream completes.
+ */
+async function askQuestionStream(userId, question, history = [], onToken = () => {}) {
+  const run = await prepareRun(userId, question, history);
+  if (!run) {
+    onToken(NO_DOCS_ANSWER);
+    return { answer: NO_DOCS_ANSWER, sources: [] };
+  }
+
+  const chain = prompt.pipe(llm).pipe(outputParser);
+  const stream = await retryWithBackoff(() =>
+    chain.stream({ context: run.context, question, history: run.historyText }),
+  );
+
+  let answer = "";
+  for await (const token of stream) {
+    if (token) {
+      answer += token;
+      onToken(token);
+    }
+  }
+
+  return { answer, sources: run.sources };
+}
+
+module.exports = { askQuestion, askQuestionStream };

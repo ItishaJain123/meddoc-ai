@@ -1,0 +1,179 @@
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.title    { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.3px; color: var(--text-primary); }
+.subtitle { font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+.filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.filterBtn {
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.filterBtn:hover { border-color: var(--primary); color: var(--text-primary); }
+.filterActive {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.filterActive:hover { color: #fff; }
+
+/* ── Timeline ────────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: 1.75rem; }
+
+.dayGroup { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.dayLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.dayEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-left: 2px solid var(--border);
+  padding-left: 1.1rem;
+  margin-left: 0.35rem;
+}
+
+.event {
+  display: flex;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  position: relative;
+}
+.event::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem; top: 1.2rem;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+/* The story reads from the colors: blue = report, amber = abnormal,
+   red = critical, teal = medication. Dot + left accent carry the tone;
+   attention-worthy events also get a tinted card. */
+.event_blue::before    { background: var(--primary); }
+.event_amber::before   { background: var(--warning); }
+.event_red::before     { background: var(--danger); }
+.event_teal::before    { background: var(--teal); }
+.event_neutral::before { background: var(--text-muted); }
+
+.event_blue  { border-left-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.event_teal  { border-left-color: var(--teal); }
+.event_amber {
+  border-left-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 4%, var(--surface));
+}
+.event_red {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
+/* Compact one-line row for routine "report uploaded" events */
+.eventCompact { padding: 0.5rem 0.9rem; align-items: center; }
+.eventCompact::before { top: 50%; transform: translateY(-50%); }
+.eventCompact .eventIcon { width: 24px; height: 24px; border-radius: 7px; }
+.eventInlineDetail { font-weight: 500; color: var(--text-secondary); }
+
+.eventIcon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tone_blue    { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); }
+.tone_amber   { background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning); }
+.tone_red     { background: color-mix(in srgb, var(--danger) 12%, transparent);  color: var(--danger); }
+.tone_teal    { background: color-mix(in srgb, var(--teal) 12%, transparent);    color: var(--teal); }
+.tone_neutral { background: var(--border-light); color: var(--text-secondary); }
+
+.eventBody { min-width: 0; flex: 1; }
+
+.eventTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.eventTitle { font-size: 0.86rem; font-weight: 700; color: var(--text-primary); }
+
+.eventBadge {
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.badge_blue    { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); }
+.badge_amber   { background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning); }
+.badge_red     { background: color-mix(in srgb, var(--danger) 12%, transparent);  color: var(--danger); }
+.badge_teal    { background: color-mix(in srgb, var(--teal) 12%, transparent);    color: var(--teal); }
+.badge_neutral { background: var(--border-light); color: var(--text-secondary); }
+
+.eventDetail { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.5; }
+.eventSource { font-size: 0.71rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+/* ── States ──────────────────────────────────────────────────── */
+.error { color: var(--danger); font-size: 0.85rem; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.skeletons { display: flex; flex-direction: column; gap: 0.75rem; }
+.skeleton {
+  height: 74px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmerTl 1.4s infinite;
+}
+@keyframes shimmerTl { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+@media (max-width: 640px) {
+  .header { flex-direction: column; align-items: flex-start; }
+}

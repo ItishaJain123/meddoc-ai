@@ -3,7 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // NOTE: local dev runs MySQL; production runs PostgreSQL. Prisma requires a
+  // static provider, so switch this to "postgresql" before deploying.
+  provider = "mysql"
   url      = env("MEDDOC_DATABASE_URL")
 }
 
@@ -12,6 +14,14 @@ model User {
   clerkId          String            @unique
   email            String            @unique
   fullName         String?
+  // Identity of the account owner, learned from the first uploaded report.
+  // Every later upload's patient name is matched against this (+ aliases) so
+  // a user can only add their OWN reports. Null until the first report is read.
+  patientName      String?
+  // Accepted alternate spellings (JSON array of strings), added when a user
+  // confirms a held report is theirs. Json (not String[]) so it works on both
+  // the production PostgreSQL and a MySQL dev database. Null == no aliases.
+  patientAliases   Json?
   consentGiven     Boolean           @default(false)
   consentAt        DateTime?
   createdAt        DateTime          @default(now())
@@ -43,6 +53,11 @@ model Document {
   extractedText String?
   vectorStoreId String?
   encryptionIv  String?
+  // Patient name read off this report, and whether it failed the owner-identity
+  // check. When identityMismatch is true the report is held (not embedded, no
+  // metrics saved) until the user confirms it is theirs via "This is me".
+  extractedPatientName String?
+  identityMismatch     Boolean  @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   healthMetrics    HealthMetric[]

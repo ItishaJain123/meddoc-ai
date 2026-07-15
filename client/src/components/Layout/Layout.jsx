@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 import { useTheme } from "../../hooks/useTheme";
 import { useState, useEffect } from "react";
+import CommandPalette from "../CommandPalette/CommandPalette";
 import styles from "./Layout.module.css";
 
 const NAV = [
@@ -39,6 +40,14 @@ const NAV = [
     ),
   },
   {
+    to: "/timeline", label: "Timeline",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+        <path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" />
+      </svg>
+    ),
+  },
+  {
     to: "/summary", label: "Summary",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
@@ -71,7 +80,31 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    to: "/compare", label: "Compare Reports",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+        <rect x="2" y="3" width="8" height="18" rx="1" /><rect x="14" y="3" width="8" height="18" rx="1" />
+        <line x1="10" y1="8" x2="14" y2="8" /><line x1="10" y1="12" x2="14" y2="12" /><line x1="10" y1="16" x2="14" y2="16" />
+      </svg>
+    ),
+  },
 ];
+
+// Sidebar sections — order + grouping of NAV items by route
+const GROUPS = [
+  { label: "Overview",    items: ["/dashboard", "/timeline", "/about"] },
+  { label: "Health data", items: ["/documents", "/trends", "/summary"] },
+  { label: "Tools",       items: ["/chat", "/medications", "/goals", "/compare"] },
+];
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="15" height="15">
+      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
 
 function ChevronLeftIcon() {
   return (
@@ -134,6 +167,7 @@ function Logo({ collapsed }) {
 
 function Layout() {
   const { isDark, toggle } = useTheme();
+  const { user } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("sidebar-collapsed") === "true"
@@ -151,6 +185,7 @@ function Layout() {
 
   return (
     <div className={styles.wrapper}>
+      <CommandPalette />
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""} ${mobileOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarHeader}>
@@ -176,19 +211,45 @@ function Layout() {
           )}
         </div>
 
+        {/* Search / command palette affordance */}
+        <button
+          className={`${styles.searchBtn} ${collapsed ? styles.searchBtnCollapsed : ""}`}
+          onClick={() =>
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))
+          }
+          title="Search (Ctrl+K)"
+        >
+          <SearchIcon />
+          {!collapsed && (
+            <>
+              <span className={styles.searchLabel}>Search…</span>
+              <kbd className={styles.searchKbd}>Ctrl K</kbd>
+            </>
+          )}
+        </button>
+
         <nav className={styles.nav}>
-          {NAV.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              title={collapsed ? label : undefined}
-              className={({ isActive }) =>
-                `${styles.navLink} ${collapsed ? styles.navLinkCollapsed : ""} ${isActive ? styles.active : ""}`
-              }
-            >
-              <span className={styles.navIcon}>{icon}</span>
-              {!collapsed && <span className={styles.navLabel}>{label}</span>}
-            </NavLink>
+          {GROUPS.map((group) => (
+            <div key={group.label} className={styles.navGroup}>
+              {!collapsed && <span className={styles.navGroupLabel}>{group.label}</span>}
+              {group.items.map((to) => {
+                const item = NAV.find((n) => n.to === to);
+                if (!item) return null;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    title={collapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      `${styles.navLink} ${collapsed ? styles.navLinkCollapsed : ""} ${isActive ? styles.active : ""}`
+                    }
+                  >
+                    <span className={styles.navIcon}>{item.icon}</span>
+                    {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+                  </NavLink>
+                );
+              })}
+            </div>
           ))}
         </nav>
 
@@ -202,8 +263,13 @@ function Layout() {
             {!collapsed && <span>{isDark ? "Light mode" : "Dark mode"}</span>}
           </button>
           <div className={`${styles.userRow} ${collapsed ? styles.userRowCollapsed : ""}`}>
-            <UserButton afterSignOutUrl="/sign-in" />
-            {!collapsed && <span className={styles.userLabel}>Account</span>}
+            <UserButton afterSignOutUrl="/" />
+            {!collapsed && (
+              <div className={styles.userInfo}>
+                <span className={styles.userName}>{user?.fullName || user?.firstName || "Account"}</span>
+                <span className={styles.userEmail}>{user?.primaryEmailAddress?.emailAddress}</span>
+              </div>
+            )}
           </div>
         </div>
       </aside>

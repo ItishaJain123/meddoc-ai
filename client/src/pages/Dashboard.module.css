@@ -7,8 +7,23 @@
   gap: 1.5rem;
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
-.header {
+/* Staggered entrance for top-level sections */
+@media (prefers-reduced-motion: no-preference) {
+  .page > * { animation: rise 0.38s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+  .page > *:nth-child(2) { animation-delay: 0.05s; }
+  .page > *:nth-child(3) { animation-delay: 0.10s; }
+  .page > *:nth-child(4) { animation-delay: 0.15s; }
+  .page > *:nth-child(5) { animation-delay: 0.20s; }
+  .page > *:nth-child(6) { animation-delay: 0.25s; }
+  .page > *:nth-child(n+7) { animation-delay: 0.30s; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -17,26 +32,130 @@
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
 }
-.headerLeft    { display: flex; flex-direction: column; gap: 0.1rem; }
-.greeting      { font-size: 0.84rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.02em; }
-.name          { font-size: 1.9rem; font-weight: 800; color: var(--text-primary); line-height: 1.15; display: flex; align-items: center; gap: 0.4rem; }
-.wave          { font-size: 1.5rem; }
-.headerTagline { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+.headerLeft    { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.greeting      { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.02em; }
+.name {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  /* Brand-gradient text — the hero is where the brand earns its keep */
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--text-primary); /* fallback for non-supporting browsers */
+  width: fit-content;
+}
+.headerTagline { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; }
 .headerActions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+
+/* Stat chips under the greeting — scannable at a glance, and the
+   "needs attention" chip is a shortcut to the trends page */
+.heroChips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+.heroChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  white-space: nowrap;
+}
+.heroChip strong { color: var(--text-primary); font-weight: 700; }
+.heroChip svg { color: var(--primary); flex-shrink: 0; }
+
+.heroChipWarn {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+.heroChipWarn strong, .heroChipWarn svg { color: var(--warning); }
+.heroChipWarn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--warning) 25%, transparent);
+}
+
+.heroChipOk {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  animation: okPulse 2.4s ease-in-out 2;
+}
+.heroChipOk svg { color: var(--success); }
+@keyframes okPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 35%, transparent); }
+  50%      { box-shadow: 0 0 0 6px transparent; }
+}
+
+/* ── Hero right side: actions + health score ring ────────────── */
+.heroRight {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.scoreRing { position: relative; flex-shrink: 0; line-height: 0; }
+.scoreArc  { transition: stroke-dashoffset 1.2s cubic-bezier(0.25, 0.7, 0.3, 1); }
+.scoreCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  pointer-events: none;
+}
+.scoreNum {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.scoreLbl {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  max-width: 84px;
+  text-align: center;
+  line-height: 1.25;
+}
 
 .btnPrimary {
   display: flex; align-items: center; gap: 0.4rem;
-  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+  background: var(--brand-gradient);
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
   padding: 0.55rem 1.2rem;
   font-size: 0.87rem; font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
-  box-shadow: 0 2px 14px color-mix(in srgb, var(--neon-purple) 40%, transparent);
+  transition: transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--brand-from) 30%, transparent);
 }
-.btnPrimary:hover  { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 20px color-mix(in srgb, var(--neon-purple) 55%, transparent); }
+.btnPrimary:hover {
+  background: var(--brand-gradient-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--brand-from) 40%, transparent);
+}
 .btnPrimary:active { transform: translateY(0); }
 
 .btnSecondary {
@@ -52,6 +171,23 @@
 }
 .btnSecondary:hover   { background: var(--bg); border-color: var(--neon-blue); transform: translateY(-1px); }
 .btnSecondary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* ── First-run demo banner ───────────────────────────────────── */
+.demoBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.4rem;
+}
+.demoTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.demoSub   { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; max-width: 560px; }
+.spin      { animation: spinAnim 0.8s linear infinite; }
+@keyframes spinAnim { to { transform: rotate(360deg); } }
 
 /* ── Stats row ───────────────────────────────────────────────── */
 .statsRow {
@@ -69,33 +205,26 @@
   gap: 1rem;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.15s;
-}
-.statCard::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--card-neon, var(--neon-blue));
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.15s;
 }
 .statCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--card-neon, var(--neon-blue)) 20%, transparent);
-}
-[data-theme="dark"] .statCard:hover {
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--card-neon, var(--neon-blue)) 35%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  box-shadow: var(--shadow-md);
 }
 .statIconWrap {
-  width: 44px; height: 44px;
-  background: color-mix(in srgb, var(--card-neon, var(--neon-blue)) 12%, transparent);
+  width: 42px; height: 42px;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.statIcon  { font-size: 1.35rem; line-height: 1; }
+.statIcon  { display: flex; align-items: center; line-height: 1; }
 .statBody  { display: flex; flex-direction: column; gap: 0.12rem; }
-.statValue { font-size: 1.65rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.statValue { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .statLabel { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-.statSub   { font-size: 0.7rem; color: var(--neon-pink); font-weight: 600; }
+.statSub   { font-size: 0.7rem; color: var(--danger); font-weight: 600; }
 
 /* ── Alert banner ────────────────────────────────────────────── */
 .alertBanner {
@@ -133,43 +262,39 @@
   overflow: hidden;
   transition: box-shadow 0.2s;
 }
-.chartCard::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--card-neon, var(--neon-blue));
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-[data-theme="dark"] .chartCard {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--card-neon, var(--neon-blue)) 10%, transparent);
-}
-[data-theme="dark"] .chartCard:hover {
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--card-neon, var(--neon-blue)) 18%, transparent),
-    0 6px 30px color-mix(in srgb, var(--card-neon, var(--neon-blue)) 15%, transparent);
+.chartCard:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .chartHead {
   display: flex; align-items: flex-start; gap: 0.75rem;
 }
 .chartIconWrap {
-  width: 36px; height: 36px;
-  background: color-mix(in srgb, var(--card-neon, var(--neon-blue)) 12%, transparent);
+  width: 34px; height: 34px;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; font-size: 1.05rem;
+  flex-shrink: 0;
 }
 .chartTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
 .chartSub   { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
 .chartHint  { font-size: 0.72rem; color: var(--text-muted); text-align: center; }
 
-/* ── Glow wrapper — applied to chart containers in dark mode ─── */
+/* ── Chart container wrapper ─────────────────────────────────── */
 .glowWrap { position: relative; }
-[data-theme="dark"] .glowDynamic {
-  filter: drop-shadow(0 0 10px var(--glow-color, rgba(0,212,255,0.25)));
-}
 
 .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr;       gap: 1rem; }
+
+/* Trend chart (2/3) + recent activity (1/3) share one row */
+.rowMain {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+.rowMain > * { min-width: 0; }
 
 /* ── Health gauge ────────────────────────────────────────────── */
 .gaugeWrap {
@@ -203,6 +328,11 @@
   display: flex; align-items: flex-start;
   justify-content: space-between; gap: 1rem; flex-wrap: wrap;
 }
+/* margin-left: auto keeps the controls (and the ⓘ popover anchor) pinned to
+   the card's right edge even when they wrap onto their own line — a
+   left-anchored ⓘ would open its popover past the card edge, where the
+   card's overflow: hidden clips it */
+.trendControls { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; margin-left: auto; }
 .selectWrap  { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
 .selectLabel { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
 .metricSelect {
@@ -246,12 +376,9 @@
 .sectionTitle::before {
   content: '';
   position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 4px; height: 1.1em;
-  background: linear-gradient(to bottom, var(--neon-blue), var(--neon-purple));
+  width: 3px; height: 1.1em;
+  background: var(--primary);
   border-radius: 4px;
-}
-[data-theme="dark"] .sectionTitle::before {
-  box-shadow: 0 0 8px var(--neon-blue);
 }
 .sectionSub { font-size: 0.78rem; color: var(--text-muted); margin-top: -0.4rem; }
 
@@ -306,15 +433,40 @@
   transition: opacity 0.15s;
 }
 .recentLink:hover { opacity: 0.7; }
-[data-theme="dark"] .recentLink { text-shadow: 0 0 8px color-mix(in srgb, var(--neon-blue) 60%, transparent); }
 .recentList { display: flex; flex-direction: column; gap: 0.3rem; }
+.recentGroupLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+.recentGroupLabel:first-child { margin-top: 0; }
+.recentGroupLink {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--primary);
+  min-height: 0;
+}
+.recentGroupLink:hover { opacity: 0.7; }
 .recentItem {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.55rem 0.65rem; border-radius: var(--radius-sm);
   cursor: pointer; transition: background 0.12s;
 }
 .recentItem:hover    { background: var(--bg); }
-.recentItemIcon      { font-size: 1.25rem; flex-shrink: 0; }
+.recentItemIcon      { display: flex; color: var(--text-muted); flex-shrink: 0; }
 .recentItemBody      { flex: 1; min-width: 0; }
 .recentItemName {
   font-size: 0.84rem; font-weight: 600; color: var(--text-primary);
@@ -335,7 +487,7 @@
   align-items: center; justify-content: center;
   gap: 0.5rem; padding: 2.25rem 1rem; flex: 1;
 }
-.emptyIcon { font-size: 2.25rem; }
+.emptyIcon { color: var(--text-muted); display: flex; }
 .emptyMsg  { font-size: 0.82rem; color: var(--text-muted); text-align: center; line-height: 1.5; }
 
 /* ── Error state ─────────────────────────────────────────────── */
@@ -357,19 +509,21 @@
 }
 .errorHint { font-size: 0.77rem; color: var(--text-muted); text-align: center; }
 
-/* ── Skeleton loader ─────────────────────────────────────────── */
-.loadingGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+/* ── Skeleton loader — mirrors the real layout ───────────────── */
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
-.skeleton {
-  height: 190px;
-  background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
+.skel {
+  background: linear-gradient(90deg, var(--border-light) 25%, var(--bg) 50%, var(--border-light) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
 }
+.skelStat  { height: 86px; }
+.skelChart { height: 320px; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* ── Section header with action ─────────────────────────────── */
@@ -410,7 +564,7 @@
 
 .abnormalValues { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .abnormalActual { display: flex; align-items: baseline; gap: 0.25rem; }
-.abnormalVal    { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.abnormalVal    { font-size: 1.4rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .abnormalUnit   { font-size: 0.75rem; color: var(--text-muted); }
 
 .abnormalRange      { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
@@ -445,6 +599,7 @@
 .goalTop    { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .goalName   { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
 .goalBadge  { font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.goalBadgeAchieved { animation: okPulse 2.4s ease-in-out 2; }
 .goalTarget { font-size: 0.76rem; color: var(--text-muted); }
 .goalCurrent { color: var(--text-secondary); }
 
@@ -486,7 +641,13 @@
 }
 
 .pdfLeft  { display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0; }
-.pdfIcon  { font-size: 2.2rem; flex-shrink: 0; }
+.pdfIcon  {
+  width: 52px; height: 52px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+}
 .pdfTitle { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
 .pdfSub   { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
 
@@ -505,81 +666,75 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: linear-gradient(135deg, var(--pdf-color, var(--neon-purple)), color-mix(in srgb, var(--pdf-color, var(--neon-purple)) 70%, var(--neon-blue)));
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
   padding: 0.65rem 1.5rem;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
-  box-shadow: 0 3px 16px color-mix(in srgb, var(--pdf-color, var(--neon-purple)) 40%, transparent);
+  transition: background 0.15s, transform 0.12s;
+  box-shadow: var(--shadow-xs);
   flex-shrink: 0;
 }
 
 .pdfBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 5px 22px color-mix(in srgb, var(--pdf-color, var(--neon-purple)) 55%, transparent);
 }
 
 .pdfBtn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* ── Chart info collapsible ──────────────────────────────────── */
+/* ── Chart info popover (ⓘ in each chart header) ─────────────── */
 .chartInfo {
-  margin-top: 0.25rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.55rem;
+  margin-left: auto;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .chartInfoToggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
   background: none;
   border: none;
+  border-radius: 50%;
   padding: 0;
   cursor: pointer;
-  font-family: var(--font);
-  font-size: 0.76rem;
-  font-weight: 600;
   color: var(--text-muted);
-  transition: color 0.15s;
-  gap: 0.4rem;
+  transition: color 0.15s, background 0.15s;
 }
 
-.chartInfoToggle:hover { color: var(--card-neon, var(--neon-blue)); }
-
-.chartInfoArrow {
-  font-size: 0.9rem;
-  display: inline-block;
-  transition: transform 0.25s ease;
-  line-height: 1;
+.chartInfoToggle:hover,
+.chartInfoToggle[aria-expanded="true"] {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
-.chartInfoArrowOpen { transform: rotate(180deg); }
-
-.chartInfoBody {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.28s ease;
-  overflow: hidden;
-}
-
-.chartInfoBodyOpen { grid-template-rows: 1fr; }
-
-.chartInfoBody > * {
-  overflow: hidden;
+.chartInfoPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  max-width: 74vw;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.8rem 0.95rem;
+  z-index: 40;
 }
 
 .chartInfoSummary {
   font-size: 0.78rem;
   color: var(--text-secondary);
   line-height: 1.55;
-  margin: 0.55rem 0 0.4rem;
+  margin: 0 0 0.45rem;
 }
 
 .chartInfoList {
@@ -603,7 +758,7 @@
   content: '•';
   position: absolute;
   left: 0.2rem;
-  color: var(--card-neon, var(--neon-blue));
+  color: var(--primary);
   font-size: 0.85rem;
 }
 
@@ -615,7 +770,10 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 960px) { .row3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 960px) {
+  .row3    { grid-template-columns: 1fr 1fr; }
+  .rowMain { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 768px) {
   .page { padding: 1.25rem 1rem 3.5rem; }
@@ -629,7 +787,8 @@
   .row2        { grid-template-columns: 1fr; }
   .statsRow    { grid-template-columns: 1fr 1fr; }
   .loadingGrid { grid-template-columns: 1fr; }
-  .name        { font-size: 1.4rem; }
+  .name        { font-size: 1.7rem; }
+  .heroChips   { gap: 0.4rem; }
   .headerActions { width: 100%; }
   .btnPrimary, .btnSecondary { flex: 1; justify-content: center; }
   .alertBanner  { flex-direction: column; gap: 0.5rem; align-items: flex-start; }

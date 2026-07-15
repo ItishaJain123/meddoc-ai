@@ -1,6 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import { Share2, Check, Loader2 } from 'lucide-react';
 import { useMetrics } from '../hooks/useMetrics';
 import styles from './SummaryPage.module.css';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function StatusBadge({ status }) {
   const map = {
@@ -13,7 +17,30 @@ function StatusBadge({ status }) {
 
 function SummaryPage() {
   const { summary, summaryLoading, summaryError, generateSummary } = useMetrics();
+  const { getToken } = useAuth();
   const printRef = useRef(null);
+  const [shareState, setShareState] = useState('idle'); // idle | loading | copied | error
+
+  async function handleShare() {
+    if (shareState === 'loading') return;
+    setShareState('loading');
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_URL}/share`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not create the link');
+      const { url } = await res.json();
+      await navigator.clipboard.writeText(url);
+      setShareState('copied');
+      setTimeout(() => setShareState('idle'), 3500);
+    } catch (err) {
+      console.error(err);
+      setShareState('error');
+      setTimeout(() => setShareState('idle'), 3500);
+    }
+  }
 
   function handlePrint() {
     const content = printRef.current.innerHTML;
@@ -57,6 +84,13 @@ function SummaryPage() {
           >
             {summaryLoading ? 'Generating...' : summary ? 'Regenerate' : 'Generate Summary'}
           </button>
+          <button className={styles.printBtn} onClick={handleShare} disabled={shareState === 'loading'}
+            title="Copies a read-only link that expires in 72 hours">
+            {shareState === 'loading' ? <Loader2 size={15} className={styles.spin} />
+              : shareState === 'copied' ? <Check size={15} />
+              : <Share2 size={15} />}
+            {shareState === 'copied' ? 'Link copied!' : shareState === 'error' ? 'Failed — retry' : 'Share with doctor'}
+          </button>
           {summary && (
             <button className={styles.printBtn} onClick={handlePrint}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,15 +107,35 @@ function SummaryPage() {
       {summaryError && <div className={styles.error}>{summaryError}</div>}
 
       {!summary && !summaryLoading && (
-        <div className={styles.empty}>
-          <div className={styles.emptyIconWrap}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
+        <div className={styles.emptyWrap}>
+          {/* Ghost preview of what the generated report will contain */}
+          <div className={styles.ghost} aria-hidden="true">
+            <div className={styles.ghostHeader}>
+              <div className={styles.ghostTitle} />
+              <div className={styles.ghostBadge} />
+            </div>
+            {['Overview', 'Abnormal Findings', 'Current Medications', 'Questions to Ask Your Doctor'].map((t) => (
+              <div key={t} className={styles.ghostSection}>
+                <span className={styles.ghostLabel}>{t}</span>
+                <div className={styles.ghostLine} />
+                <div className={styles.ghostLine} style={{ width: '82%' }} />
+                <div className={styles.ghostLine} style={{ width: '64%' }} />
+              </div>
+            ))}
           </div>
-          <h2>No summary yet</h2>
-          <p>Click "Generate Summary" to create an AI-powered health briefing from all your uploaded documents.</p>
+
+          <div className={styles.emptyOverlay}>
+            <div className={styles.emptyCard}>
+              <div className={styles.emptyIconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <h2>No summary yet</h2>
+              <p>Click "Generate Summary" to create an AI-powered health briefing from all your uploaded documents — it will include the sections previewed here.</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -111,7 +165,7 @@ function SummaryPage() {
 
           {summary.criticalAlerts?.length > 0 && (
             <div className={`${styles.section} ${styles.criticalSection}`}>
-              <h2>🚨 Critical Alerts</h2>
+              <h2>Critical Alerts</h2>
               <table className={styles.table}>
                 <thead><tr><th>Metric</th><th>Value</th><th>What it means</th></tr></thead>
                 <tbody>
@@ -174,7 +228,7 @@ function SummaryPage() {
           )}
 
           <div className={styles.disclaimer}>
-            ⚕ {summary.disclaimer}
+            {summary.disclaimer}
           </div>
         </div>
       )}

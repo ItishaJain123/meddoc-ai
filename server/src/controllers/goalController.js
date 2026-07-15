@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { matchReadings, computeGoalProgress } = require('../utils/goalProgress');
 
 async function getGoals(req, res) {
   const userId = req.user.id;
@@ -8,53 +9,34 @@ async function getGoals(req, res) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Fetch all metrics once, match in JS to handle partial names both ways
+  // All readings oldest-first: first match = baseline, last match = latest
   const allMetrics = await prisma.healthMetric.findMany({
     where: { userId },
-    orderBy: { reportDate: 'desc' },
+    orderBy: { reportDate: 'asc' },
     select: { value: true, unit: true, reportDate: true, metricName: true },
   });
 
-  console.log('[Goals Debug] userId:', userId);
-  console.log('[Goals Debug] allMetrics count:', allMetrics.length);
-  console.log('[Goals Debug] stored metric names:', allMetrics.map(m => m.metricName));
-  console.log('[Goals Debug] goals:', goals.map(g => g.metricName));
-
   const goalsWithProgress = goals.map((goal) => {
-      const goalName = goal.metricName.toLowerCase().trim();
-      const latest = allMetrics.find((m) => {
-        const stored = m.metricName.toLowerCase().trim();
-        return stored === goalName || stored.includes(goalName) || goalName.includes(stored);
-      });
+    const readings = matchReadings(allMetrics, goal.metricName);
+    const latest = readings[readings.length - 1] ?? null;
+    const baseline = readings[0] ?? null;
+    const currentValue = latest?.value ?? null;
 
-      console.log(`[Goals Debug] goal="${goal.metricName}" → matched="${latest?.metricName ?? 'NONE'}" value=${latest?.value}`);
+    const { achieved, progress } = computeGoalProgress(
+      goal.direction, goal.targetValue, currentValue, baseline?.value ?? null,
+    );
 
-      const currentValue = latest?.value ?? null;
-      let achieved = null;
-      let progress = 0;
-
-      if (currentValue !== null) {
-        achieved = goal.direction === 'above'
-          ? currentValue >= goal.targetValue
-          : currentValue <= goal.targetValue;
-
-        progress = goal.direction === 'above'
-          ? Math.min(100, Math.round((currentValue / goal.targetValue) * 100))
-          : currentValue > 0
-            ? Math.min(100, Math.round((goal.targetValue / currentValue) * 100))
-            : 0;
-      }
-
-      return {
-        ...goal,
-        currentValue,
-        unit: latest?.unit ?? goal.unit,
-        matchedMetricName: latest?.metricName ?? goal.metricName,
-        lastUpdated: latest?.reportDate ?? null,
-        achieved,
-        progress,
-      };
-    });
+    return {
+      ...goal,
+      currentValue,
+      baselineValue: baseline?.value ?? null,
+      unit: latest?.unit ?? goal.unit,
+      matchedMetricName: latest?.metricName ?? goal.metricName,
+      lastUpdated: latest?.reportDate ?? null,
+      achieved,
+      progress,
+    };
+  });
 
   res.json(goalsWithProgress);
 }
@@ -100,14 +82,27 @@ async function deleteGoal(req, res) {
   res.json({ message: 'Goal deleted' });
 }
 
+// Latest reading per distinct metric — value + safe range let the client
+// prefill sensible targets and suggest goals for abnormal values
 async function getAvailableMetrics(req, res) {
   const metrics = await prisma.healthMetric.findMany({
     where: { userId: req.user.id },
-    distinct: ['metricName'],
-    select: { metricName: true, unit: true },
-    orderBy: { metricName: 'asc' },
+    orderBy: { reportDate: 'desc' },
+    select: {
+      metricName: true, unit: true, value: true,
+      refRangeLow: true, refRangeHigh: true,
+      isAbnormal: true, isCritical: true, reportDate: true,
+    },
   });
-  res.json(metrics);
+
+  const latestPerMetric = new Map();
+  for (const m of metrics) {
+    if (!latestPerMetric.has(m.metricName)) latestPerMetric.set(m.metricName, m);
+  }
+
+  res.json(
+    [...latestPerMetric.values()].sort((a, b) => a.metricName.localeCompare(b.metricName)),
+  );
 }
 
 module.exports = { getGoals, createGoal, deleteGoal, getAvailableMetrics };

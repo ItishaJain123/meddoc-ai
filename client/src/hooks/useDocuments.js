@@ -7,6 +7,9 @@ import {
   pollDocumentStatus,
   reextractDocument,
   retryDocument,
+  seedDemoData,
+  clearDemoData,
+  confirmDocumentIdentity,
 } from '../services/documentService';
 
 export function useDocuments() {
@@ -18,6 +21,8 @@ export function useDocuments() {
   const [toasts, setToasts] = useState([]);
   const [reextractingIds, setReextractingIds] = useState(new Set());
   const [retryingIds, setRetryingIds] = useState(new Set());
+  const [confirmingIds, setConfirmingIds] = useState(new Set());
+  const [seeding, setSeeding] = useState(false);
   const toastIdRef = useRef(0);
 
   function addToast(type, title, message = null) {
@@ -67,7 +72,15 @@ export function useDocuments() {
               `"${doc.fileName}" has been processed and is ready to chat.`
             );
           } else if (update.status === 'FAILED') {
-            if (update.rejectionReason) {
+            if (update.identityMismatch) {
+              addToast(
+                'error',
+                'Different patient name',
+                update.extractedPatientName
+                  ? `"${doc.fileName}" appears to belong to ${update.extractedPatientName}. You can only upload your own reports.`
+                  : `"${doc.fileName}" appears to belong to a different person. You can only upload your own reports.`
+              );
+            } else if (update.rejectionReason) {
               addToast(
                 'error',
                 'Not a medical document',
@@ -129,6 +142,54 @@ export function useDocuments() {
     }
   }
 
+  async function seedDemo() {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const result = await seedDemoData(getToken);
+      if (result.alreadySeeded) {
+        addToast('info', 'Already loaded', 'Sample data is already in your account.');
+      } else {
+        addToast('success', 'Sample data loaded!', 'Two lab reports and a prescription were added. Explore the dashboard, trends and chat.');
+      }
+      await loadDocuments();
+    } catch (err) {
+      addToast('error', 'Could not load sample data', err.message);
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  async function clearDemo() {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const result = await clearDemoData(getToken);
+      setDocuments((prev) => prev.filter((d) => !d.fileName.startsWith('Sample — ')));
+      addToast('info', 'Sample data cleared', `${result.removed} sample document${result.removed !== 1 ? 's' : ''} removed. Upload your own reports to see real insights.`);
+    } catch (err) {
+      addToast('error', 'Could not clear sample data', err.message);
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  async function confirmIdentity(id) {
+    if (confirmingIds.has(id)) return;
+    setConfirmingIds((prev) => new Set([...prev, id]));
+    try {
+      await confirmDocumentIdentity(id, getToken);
+      setDocuments((prev) =>
+        prev.map((d) => d.id === id ? { ...d, status: 'PROCESSING', identityMismatch: false } : d)
+      );
+      addToast('info', 'Confirming...', 'Report confirmed as yours and queued for processing.');
+    } catch (err) {
+      addToast('error', 'Could not confirm', err.message);
+    } finally {
+      setConfirmingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  }
+
   async function retry(id) {
     if (retryingIds.has(id)) return;
     setRetryingIds((prev) => new Set([...prev, id]));
@@ -145,5 +206,5 @@ export function useDocuments() {
     }
   }
 
-  return { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, retry, retryingIds, toasts, removeToast };
+  return { documents, loading, uploading, error, upload, remove, reextract, reextractingIds, retry, retryingIds, confirmIdentity, confirmingIds, toasts, removeToast, seedDemo, clearDemo, seeding };
 }
